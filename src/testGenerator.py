@@ -12,13 +12,16 @@ except ImportError:
     except ImportError:
         raise ImportError('Cannot find any version of ElementTree')
  
-assessmentItem  = ET.Element("assessmentItem", identifier="choice", title="Titulo pregunta", adaptive="false", timeDependent="false", codigo="1")
+assessmentItem  = ET.Element("assessmentItem", identifier="choiceMultiple", title="Titulo pregunta", adaptive="False", timeDependent="False", assessmentID="1")
 comentarioAssessmentItem = ET.Comment("Nodo raiz pregunta, codigo debe ser dinamico")
 assessmentItem.append(comentarioAssessmentItem)
+assessmentItem.text = assessmentItem.get("title")
 
-responseDeclaration = ET.SubElement(assessmentItem, "responseDeclaration", identifier="RESPONSE" , cardinality="single" , baseType="identifier")
+responseDeclaration = ET.SubElement(assessmentItem, "responseDeclaration", identifier="RESPONSE" , cardinality="single" , baseType="bloomComplexity", choiceQuantity="5")
 comentarioResponseDeclaration = ET.Comment("Atributos alternativa pregunta")
 responseDeclaration.append(comentarioResponseDeclaration)
+#cantidadAlternativas=responseDeclaration.get("choiceQuantity")
+#print(cantidadAlternativas)
 
 correctResponse = ET.SubElement(responseDeclaration, "correctResponse")
 comentarioCorrectResponse = ET.Comment("Alternativa correcta")
@@ -37,10 +40,9 @@ defaultValue = ET.SubElement( outcomeDeclaration, "defaultValue")
 comentarioDefaultValue = ET.Comment("Valor por defecto")
 defaultValue.append(comentarioDefaultValue)
 
-valueDefaultValue = ET.SubElement( defaultValue, "value")
-comentarioValueDefaultValue = ET.Comment("Valor por defecto")
-valueDefaultValue.append(comentarioValueDefaultValue)
-valueDefaultValue.text = "0"
+valueDefaultScore = ET.SubElement( defaultValue, "value", quantity="0")
+comentarioValueDefaultValue = ET.Comment("Valor por defecto puntaje obtenido")
+valueDefaultScore.append(comentarioValueDefaultValue)
 
 itemBody = ET.SubElement(assessmentItem, "itemBody")
 comentarioItemBody = ET.Comment("Cuerpo de la pregunta")
@@ -51,7 +53,7 @@ comentarioStatement = ET.Comment("Aqui falta analizar morfologia enunciado")
 statement.append(comentarioStatement)
 statement.text = "Enunciado"
 
-choiceInteraction = ET.SubElement(itemBody,"choiceInteraction", responseIdentifier="RESPONSE", shuffle="false", maxChoices="1")
+choiceInteraction = ET.SubElement(itemBody,"choiceInteraction", responseIdentifier="RESPONSE", shuffle="True", maxChoices="1")
 comentarioChoiceInteraction = ET.Comment("Inicio y propiedades pregunta")
 choiceInteraction.append(comentarioChoiceInteraction)
 
@@ -60,15 +62,16 @@ comentarioPrompt = ET.Comment("Pregunta, Aqui falta analizar morfologia pregunta
 prompt.append(comentarioPrompt)
 prompt.text = "Pregunta"
 
-simpleChoice = [ET.SubElement(prompt,"simpleChoice", num=str(i)) for i in xrange(3)]
-respuestas=["A", "B", "C"]
+simpleChoice = [ET.SubElement(prompt,"simpleChoice", num=str(i)) for i in xrange(int(responseDeclaration.get("choiceQuantity")))]
+respuestas=["A", "B", "C", "D", "E"]
 
 cantidadElementos=len(simpleChoice)
 contador=0
 for alternativa in simpleChoice:
-    alternativa.text = respuestas[0]
-    respuestas.pop(0)
     contador=contador+1
+    letraAlternativa = chr(64+contador)+ chr(41)+" "
+    alternativa.text = letraAlternativa+respuestas[0]
+    respuestas.pop(0)
     if (contador==cantidadElementos):
         comentarioSimpleChoice = ET.Comment("Solo la ultima alternativa lleva comentario")
         alternativa.append(comentarioSimpleChoice)
