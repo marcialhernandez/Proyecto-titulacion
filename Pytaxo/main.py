@@ -1,6 +1,6 @@
 from archivos import nombres
 from archivos import acceso
-from clases import clases
+from clases import item
 
 nombreCarpetaModulo="Modulos"
 nombreCompilador="python"

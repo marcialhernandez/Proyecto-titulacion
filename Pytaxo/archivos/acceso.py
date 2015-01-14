@@ -1,4 +1,4 @@
-from clases import clases
+from clases import item, entrada
 from nombres import obtieneNombreArchivo
 import subprocess, stat, os
 
@@ -30,7 +30,26 @@ def obtenerResultadosModulo(rutaArchivo, lenguaje):
         except Exception as falla:
             #print type(falla.args)
             #print type(falla.args[0])
-            return clases.item(obtieneNombreArchivo(rutaArchivo),"",formateaResultado(falla.args[0]))
+            return item.item(obtieneNombreArchivo(rutaArchivo),"",formateaResultado(falla.args[0]))
     else:
         #print output
-        return clases.item(obtieneNombreArchivo(rutaArchivo),formateaResultado(output),"")
+        return item.item(obtieneNombreArchivo(rutaArchivo),formateaResultado(output),"")
+
+#Funcion que ejecuta una entrada y obtiene sus resultados
+#Argumentos:
+#-Ruta de archivo y su nombre por ejemplo "Modulos/test1.py"
+#-lenguaje compilador del modulo, por ejemplo "python"
+def obtenerResultadosEntrada(rutaArchivo, lenguaje):
+    permisoAcceso(rutaArchivo)
+    proceso = subprocess.Popen([lenguaje, rutaArchivo],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    output, errors = proceso.communicate()
+    if proceso.returncode:
+        try:
+            raise Exception(errors)
+        except Exception as falla:
+            #print type(falla.args)
+            #print type(falla.args[0])
+            return entrada.entrada(obtieneNombreArchivo(rutaArchivo),"",formateaResultado(falla.args[0]))
+    else:
+        #print output
+        return entrada.entrada(obtieneNombreArchivo(rutaArchivo),formateaResultado(output),"")
