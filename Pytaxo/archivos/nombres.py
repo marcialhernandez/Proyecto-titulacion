@@ -1,4 +1,13 @@
 import os
+import inspect
+
+def directorioReal(entrada):
+    try:
+#         filename =  'Entradas/Codigo/testEntrada1.py' # where we were when the module was loaded
+        nombreArchivo =  entrada # where we were when the module was loaded
+    except NameError: # fallback
+        nombreArchivo = inspect.getsourcefile(directorioReal)
+    return os.path.realpath(nombreArchivo)+"" 
 
 #Funcion que retorna lista con los nombres de los archivos/carpetas del
 #directorio actual
@@ -7,8 +16,8 @@ def currentDirectoryNames():
     for dirname, dirnames, filenames in os.walk('.'):
     # print path to all subdirectories first.
         for subdirname in dirnames:
-            listaDirectorios.append(subdirname)
-            #print os.path.join(dirname, subdirname)
+            #listaDirectorios.append(subdirname)
+            listaDirectorios.append(os.path.join(dirname, subdirname))
     return listaDirectorios
 
 def currentSubdirectoyNames():
@@ -19,11 +28,21 @@ def currentSubdirectoyNames():
             print os.path.join(dirname, filename)
     pass
 
+#Funcion que obtiene los subarchivos del directorio entregado como argumento
 def especificDirectoryNames(nombreArchivo):
     listaDirectorios=list()
     for dirname, dirnames, filenames in os.walk(nombreArchivo):
         for filename in filenames:
             listaDirectorios.append(filename)
+            #print os.path.join(dirname, filename)
+    return listaDirectorios
+
+#Funcion que obtiene las rutas de los subarchivos del directorio entregado como argumento
+def fullEspecificDirectoryNames(nombreArchivo):
+    listaDirectorios=list()
+    for dirname, dirnames, filenames in os.walk(nombreArchivo):
+        for filename in filenames:
+            listaDirectorios.append(os.path.join(dirname, filename))
             #print os.path.join(dirname, filename)
     return listaDirectorios
 
@@ -37,6 +56,34 @@ def validaExistenciaArchivo(nombreArchivo):
         mensaje= "Sistema: No existe el archivo '" +nombreArchivo +"'"
         print (mensaje)
     return estado
+
+#Valida la existencia de la carpeta "Entradas/directorioEspecifico y ademas si este contiene subArchivos"
+def validaExistenciasSubProceso(nombreDirectorioEntradas):
+    flagExistenciaDirectorioEntrada=0
+    flagExistenciaDirectorioEsp=0
+    listaArchivosEntrada=list()
+    for directorio in nombresSubCarpetas("."):
+        if directorio=='./Entradas':
+            flagExistenciaDirectorioEntrada=1
+    
+    if flagExistenciaDirectorioEntrada==0:
+        print "Sistema: No existe la carpeta ./Entradas"
+        return False
+    
+    for directorio2 in nombresSubCarpetas("./Entradas"):
+        if directorio2==nombreDirectorioEntradas:
+            flagExistenciaDirectorioEsp=1
+            
+    if flagExistenciaDirectorioEsp==0:
+        print "Sistema: No existe la carpeta "+nombreDirectorioEntradas
+        return False
+    
+    listaArchivosEntrada=especificDirectoryNames(nombreDirectorioEntradas)
+    if len(listaArchivosEntrada)==0:
+        print "Sistema: la carpeta "+ nombreDirectorioEntradas + " No contiene entradas para procesar"
+        return False
+    
+    return True
 
 def validaCantidadContenido(nombreCarpeta):
     estado=validaExistenciaArchivo(nombreCarpeta)
@@ -63,5 +110,6 @@ def obtieneNombreArchivo(rutaArchivo):
         nombre=rutaArchivo
     nombre=nombre.replace(".py","")
     return nombre
-        
-    
+
+def nombresSubCarpetas (directorio):
+    return filter(os.path.isdir, [os.path.join(directorio,f) for f in os.listdir(directorio)])
