@@ -109,6 +109,7 @@ def obtieneNombreArchivo(rutaArchivo):
     else:
         nombre=rutaArchivo
     nombre=nombre.replace(".py","")
+    nombre=nombre.replace(".xml","")
     return nombre
 
 def nombresSubCarpetas (directorio):
