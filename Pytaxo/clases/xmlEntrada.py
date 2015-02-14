@@ -1,4 +1,6 @@
-class xmlEntrada_Def:
+from archivos import nombres
+
+class xmlEntrada:
     #atributos estaticos
     
     #atributos de la clase
@@ -13,4 +15,12 @@ class xmlEntrada_Def:
     def printContenidoEntrada(self):
         mensaje="Nombre entrada: {nombre} \nPuntaje: {puntaje}\nTermino: {termino}\nDefinicion: {definicion}\nDistractores: {distractores} "
         print mensaje.format(nombre=self.nombre,puntaje=self.puntaje, termino=self.termino, definicion=self.definicion,distractores=self.distractores)
+        pass
+    
+    #No se sabe si es necesario crear este tipo pues es para un tipo especifico de pregunta
+    def preguntaDefSimpleIntoXml(self):
+        nombreDirectorioEntradas='./Plantillas'
+        if nombres.validaExistenciaArchivo(nombreDirectorioEntradas)==True and nombres.validaCantidadContenido(nombreDirectorioEntradas)==True:
+            print nombres.especificDirectoryNames(nombreDirectorioEntradas)
+            #falta recoger la informacion y formar la pregunta a partir de la plantilla
         pass

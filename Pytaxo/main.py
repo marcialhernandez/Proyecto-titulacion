@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from archivos import nombres
 from archivos import acceso
 from clases import item

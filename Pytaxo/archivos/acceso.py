@@ -1,4 +1,7 @@
-from clases import item, entrada, xmlEntrada_Def
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from clases import item, entrada
+from clases import xmlEntrada
 from nombres import obtieneNombreArchivo
 import subprocess, stat, os
 
@@ -72,4 +75,4 @@ def preguntaDefParser(raizXmlEntrada,nombreArchivo):
         distractor.append(elem.text)
         distractor.append(elem.attrib)
         distractores.append(distractor)
-    return xmlEntrada_Def.xmlEntrada_Def(nombreArchivo,puntaje,termino,definicion,distractores)
+    return xmlEntrada.xmlEntrada(nombreArchivo,puntaje,termino,definicion,distractores)
