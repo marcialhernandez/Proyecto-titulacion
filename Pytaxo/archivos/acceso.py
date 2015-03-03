@@ -56,23 +56,3 @@ def obtenerResultadosEntrada(rutaArchivo, lenguaje):
     else:
         #print output
         return entrada.entrada(obtieneNombreArchivo(rutaArchivo),formateaResultado(output),"")
-
-#Funcion que retorna un objeto tipo xmlEntrada a partir de la raiz
-#obtenida con la biblioteca elementTree
-def preguntaDefParser(raizXmlEntrada,nombreArchivo):
-    puntaje=0
-    termino=""
-    definicion=""
-    distractores=list()
-    for elem in raizXmlEntrada.iter('pregunta'):
-        puntaje=int((elem.attrib['puntaje']))
-    for elem in raizXmlEntrada.iter('termino'):
-        termino=elem.text
-    for elem in raizXmlEntrada.iter('definicion'):
-        definicion=elem.text
-    for elem in raizXmlEntrada.iter('distractor'):
-        distractor=list()
-        distractor.append(elem.text)
-        distractor.append(elem.attrib)
-        distractores.append(distractor)
-    return xmlEntrada.xmlEntrada(nombreArchivo,puntaje,termino,definicion,distractores)

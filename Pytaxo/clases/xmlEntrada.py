@@ -9,7 +9,7 @@ class xmlEntrada:
         self.puntaje=puntaje
         self.termino=termino
         self.definicion=definicion
-        #Lista de distractores de la forma [distractor,puntaje]
+        #Lista de distractores de la forma [distractor,{'ponderacion':ponderacion}]
         self.distractores=distractores
     
     def printContenidoEntrada(self):
@@ -24,3 +24,15 @@ class xmlEntrada:
             print nombres.especificDirectoryNames(nombreDirectorioEntradas)
             #falta recoger la informacion y formar la pregunta a partir de la plantilla
         pass
+    
+    def retornaAlternativas(self):
+        ponderacion={'ponderacion':self.puntaje}
+        alternativaCorrecta=list()
+        alternativaCorrecta.append(self.definicion)
+        alternativaCorrecta.append(ponderacion)
+        alternativas=list()
+        alternativas.append(alternativaCorrecta)
+        for elem in self.distractores:
+            alternativas.append(elem)
+        return alternativas
+    #falta reordenar las alternativas pues en este caso siempre la correcta sera la primera

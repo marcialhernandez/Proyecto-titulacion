@@ -116,3 +116,9 @@ def obtieneNombreArchivo(rutaArchivo):
 
 def nombresSubCarpetas (directorio):
     return filter(os.path.isdir, [os.path.join(directorio,f) for f in os.listdir(directorio)])
+
+#Funcion que retorna el nombre del script ejecutado
+def nombreScript(nombreArchivo):
+    nombreArchivo=os.path.basename(nombreArchivo)
+    nombreArchivo=nombreArchivo.replace(".py","")
+    return nombreArchivo
