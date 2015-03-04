@@ -4,13 +4,25 @@ class xmlEntrada:
     #atributos estaticos
     
     #atributos de la clase
-    def __init__(self,nombrePregunta,puntaje,termino,definicion,distractores):
-        self.nombre=nombrePregunta
-        self.puntaje=puntaje
-        self.termino=termino
-        self.definicion=definicion
-        #Lista de distractores de la forma [distractor,{'ponderacion':ponderacion}]
-        self.distractores=distractores
+#     def __init__(self,nombrePregunta,tipo,puntaje,termino,definicion,distractores):
+    def __init__(self,**kwargs):
+        #Atributos en comun
+        self.nombre=kwargs['nombrePregunta']
+        self.tipo=kwargs['tipo']
+        self.puntaje=kwargs['puntaje']
+        self.distractores=kwargs['distractores']
+        #Atributos solo de preguntas tipo Definicion
+        if self.tipo=="definicion":
+            self.termino=kwargs['termino']
+            self.definicion=kwargs['definicion']
+            #Lista de distractores de la forma [distractor,{'ponderacion':ponderacion}]
+        if self.tipo=="enunciadoIncompleto":
+            #Lista donde cada elemento es parte del enunciado ordenado de forma
+            #secuencial
+            self.enunciadoIncompleto=kwargs['enunciadoIncompleto']
+            #Lista donde cada elemento son las respuestas del enunciado
+            #ordenadas de forma secuencial
+            self.respuestas=kwargs['respuestas']
     
     def printContenidoEntrada(self):
         mensaje="Nombre entrada: {nombre} \nPuntaje: {puntaje}\nTermino: {termino}\nDefinicion: {definicion}\nDistractores: {distractores} "
@@ -25,10 +37,16 @@ class xmlEntrada:
             #falta recoger la informacion y formar la pregunta a partir de la plantilla
         pass
     
+    def retornaEnunciadoIncompleto(self):
+        return " ".join(self.enunciadoIncompleto)
+        
     def retornaAlternativas(self):
         ponderacion={'ponderacion':self.puntaje}
         alternativaCorrecta=list()
-        alternativaCorrecta.append(self.definicion)
+        if self.tipo=="definicion":
+            alternativaCorrecta.append(self.definicion)
+        if self.tipo=="enunciadoIncompleto":
+            alternativaCorrecta.append('-'.join(self.respuestas))
         alternativaCorrecta.append(ponderacion)
         alternativas=list()
         alternativas.append(alternativaCorrecta)

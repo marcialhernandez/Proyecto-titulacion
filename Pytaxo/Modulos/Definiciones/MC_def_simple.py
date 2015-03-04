@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import sys
+# import sys
 from archivos import nombres
 from clases import xmlEntrada
 try:
@@ -12,11 +12,13 @@ except ImportError:
 #xml enfocado a definir un termino
 def preguntaDefParser(raizXmlEntrada,nombreArchivo):
     puntaje=0
+    tipo=""
     termino=""
     definicion=""
     distractores=list()
     for elem in raizXmlEntrada.iter('pregunta'):
         puntaje=int((elem.attrib['puntaje']))
+        tipo=str(elem.attrib['tipo'])
     for elem in raizXmlEntrada.iter('termino'):
         termino=elem.text
     for elem in raizXmlEntrada.iter('definicion'):
@@ -26,7 +28,7 @@ def preguntaDefParser(raizXmlEntrada,nombreArchivo):
         distractor.append(elem.text)
         distractor.append(elem.attrib)
         distractores.append(distractor)
-    return xmlEntrada.xmlEntrada(nombreArchivo,puntaje,termino,definicion,distractores)
+    return xmlEntrada.xmlEntrada(nombrePregunta=nombreArchivo,tipo=tipo,puntaje=puntaje,termino=termino,definicion=definicion,distractores=distractores)
 
 #Funcion que analiza cada Xml de entrada
 #Si este es de tipo Definicion, se parsea con la funcion
@@ -54,6 +56,8 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject): #,xmlEntradaO
             nombreDirectorioArchivoPlantilla=nombres.directorioReal(nombreDirectorioPlantillas+"/"+nombrePlantillaCorrespondiente)
             arbolXml=ET.ElementTree(file=nombreDirectorioArchivoPlantilla)
             for subRaiz in arbolXml.iter():
+                if subRaiz.tag=='plantilla':
+                    subRaiz.set('tipo',xmlEntradaObject.tipo)
                 if subRaiz.tag=='termino':
                     subRaiz.text=xmlEntradaObject.termino
                 if subRaiz.tag=='enunciado' and subRaiz.attrib['last']=="true":
@@ -61,7 +65,8 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject): #,xmlEntradaO
                         opcion = ET.SubElement(subRaiz, 'alternativa')
                         opcion.text=alternativa[0]
                         opcion.set('ponderacion',str(alternativa[1]['ponderacion']))
-    arbolXml.write(sys.stdout)                
+    ET.dump(arbolXml)
+    #arbolXml.write(sys.stdout)   
     pass
 
 # Declaracion de directorio de entradas
@@ -76,3 +81,8 @@ if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
 
 for cadaXmlEntrada in listaXmlEntrada:
     retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada)
+
+#La forma para quitar los signos que no fueron pasados correctamente desde
+#la entrada es la siguiente
+# enunciadoSinTermino.encode("ascii","ignore")
+#         #.translate(dict.fromkeys(map(ord, u",!.;¿?")))

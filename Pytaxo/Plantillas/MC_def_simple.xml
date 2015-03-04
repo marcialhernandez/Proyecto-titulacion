@@ -1,6 +1,2 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plantilla> 
-  <enunciado last="false">En el ambito informatico, ¿ que quiere decir el</enunciado>
-  <termino></termino>
-  <enunciado last="true">?</enunciado>
-</plantilla>
+<plantilla><enunciado last="false">En el ambito informatico, ¿ que quiere decir el</enunciado><termino></termino><enunciado last="true">?</enunciado></plantilla>

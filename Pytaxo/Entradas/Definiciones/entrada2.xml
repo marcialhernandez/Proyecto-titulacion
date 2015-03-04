@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<pregunta puntaje="2" tipo="enunciadoIncompleto"> 
+  <enunciado>Los datos que soportan decimales son conocidos como</enunciado>
+  <blank>flotantes</blank>
+  <distractores>
+    <distractor ponderacion="0">Strings</distractor>
+    <distractor ponderacion="0">Ints</distractor>
+    <distractor ponderacion="0">Listas</distractor>
+  </distractores>
+</pregunta>
