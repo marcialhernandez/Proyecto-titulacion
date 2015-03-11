@@ -1,21 +1,21 @@
 from archivos import nombres
+import alternativa
 
 class xmlEntrada:
     #atributos estaticos
     
     #atributos de la clase
-#     def __init__(self,nombrePregunta,tipo,puntaje,termino,definicion,distractores):
-    def __init__(self,**kwargs):
+#     def __init__(self,nombrePregunta,tipo,puntaje,termino,definicion,alternativas):
+    def __init__(self,nombre,tipo,puntaje,alternativas,**kwargs):
         #Atributos en comun
-        self.nombre=kwargs['nombrePregunta']
-        self.tipo=kwargs['tipo']
-        self.puntaje=kwargs['puntaje']
-        self.distractores=kwargs['distractores']
+        self.nombre=nombre
+        self.tipo=tipo
+        self.puntaje=puntaje
+        self.alternativas=alternativas
         #Atributos solo de preguntas tipo Definicion
         if self.tipo=="definicion":
             self.termino=kwargs['termino']
-            self.definicion=kwargs['definicion']
-            #Lista de distractores de la forma [distractor,{'ponderacion':ponderacion}]
+            #Lista de alternativas de la forma [distractor,{'ponderacion':ponderacion}]
         if self.tipo=="enunciadoIncompleto":
             #Lista donde cada elemento es parte del enunciado ordenado de forma
             #secuencial
@@ -25,8 +25,8 @@ class xmlEntrada:
             self.respuestas=kwargs['respuestas']
     
     def printContenidoEntrada(self):
-        mensaje="Nombre entrada: {nombre} \nPuntaje: {puntaje}\nTermino: {termino}\nDefinicion: {definicion}\nDistractores: {distractores} "
-        print mensaje.format(nombre=self.nombre,puntaje=self.puntaje, termino=self.termino, definicion=self.definicion,distractores=self.distractores)
+        mensaje="Nombre entrada: {nombre} \nPuntaje: {puntaje}\nTermino: {termino}\nDefinicion: {definicion}\nDistractores: {alternativas} "
+        print mensaje.format(nombre=self.nombre,puntaje=self.puntaje, termino=self.termino, definicion=self.definicion,alternativas=self.alternativas)
         pass
     
     #No se sabe si es necesario crear este tipo pues es para un tipo especifico de pregunta
@@ -50,7 +50,7 @@ class xmlEntrada:
         alternativaCorrecta.append(ponderacion)
         alternativas=list()
         alternativas.append(alternativaCorrecta)
-        for elem in self.distractores:
+        for elem in self.alternativas:
             alternativas.append(elem)
         return alternativas
     #falta reordenar las alternativas pues en este caso siempre la correcta sera la primera

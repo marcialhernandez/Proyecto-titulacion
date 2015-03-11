@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #import sys
-from archivos import nombres
+from archivos import nombres, xmlSalida
 from clases import xmlEntrada
 try:
     import xml.etree.cElementTree as ET
@@ -30,7 +30,7 @@ def preguntaEnunciadoIncompletoParser(raizXmlEntrada,nombreArchivo):
         distractor.append(elem.text)
         distractor.append(elem.attrib)
         distractores.append(distractor)
-    return xmlEntrada.xmlEntrada(nombrePregunta=nombreArchivo,tipo=tipo,puntaje=puntaje,enunciadoIncompleto=enunciadoIncompleto,respuestas=respuestas,distractores=distractores)
+    return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,distractores,enunciadoIncompleto=enunciadoIncompleto,respuestas=respuestas)
 
 #Funcion que analiza cada Xml de entrada
 #Si este es de tipo enunciadoIncompleto, se parsea con la funcion
@@ -52,15 +52,18 @@ def lecturaXmls(nombreDirectorioEntradas):
 #por pantalla para que la informacion pueda ser recogida por el programa
 #principal
 def retornaPlantilla(xmlEntradaObject): #,xmlEntradaObject):
-    raizXml=ET.Element('plantilla')
-    raizXml.set('tipo',xmlEntradaObject.tipo)
-    subRaizEnunciado=ET.SubElement(raizXml,'enunciado')
-    subRaizEnunciado.set('last',"true")
-    subRaizEnunciado.text=xmlEntradaObject.retornaEnunciadoIncompleto()
-    for alternativa in xmlEntradaObject.retornaAlternativas():
-        subRaizAlternativa=ET.SubElement(subRaizEnunciado,'alternativa')
-        subRaizAlternativa.text=alternativa[0]
-        subRaizAlternativa.set('ponderacion',str(alternativa[1]['ponderacion']))
+    raizXml=xmlSalida.plantillaGenericaSalida()
+    for subRaiz in raizXml.iter():
+        if subRaiz.tag==('plantilla'):
+            subRaiz.set('tipo',xmlEntradaObject.tipo)
+        if subRaiz.tag==('enunciado'):
+            subRaiz.set('last',"true")
+            subRaiz.text=xmlEntradaObject.retornaEnunciadoIncompleto()
+        if subRaiz.tag==('opciones'):
+            for alternativa in xmlEntradaObject.retornaAlternativas():
+                subRaizAlternativa=ET.SubElement(subRaiz,'alternativa')
+                subRaizAlternativa.text=alternativa[0]
+                subRaizAlternativa.set('ponderacion',str(alternativa[1]['ponderacion']))
     ET.dump(raizXml)
     #raizXml.write(sys.stdout,pretty_print=True)                
     pass
