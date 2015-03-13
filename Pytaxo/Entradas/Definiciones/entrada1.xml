@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<pregunta puntaje="2" tipo="definicion"> 
+<pregunta puntaje="2" tipo="definicion" cantidadAlternativas="4"> 
   <termino>flotante</termino>
   <opciones>
     <alternativa id="1" puntaje="2" tipo="solucion">tipo de dato que soporta decimales
@@ -11,4 +11,14 @@
     <alternativa id="4" puntaje="0" tipo="distractor">tipo de numero que soporta decimales
     <comentario>alternativa incorrecta</comentario></alternativa>
   </opciones>
+  <sustitutos>
+  <alternativa id="1" puntaje="2" tipo="solucion">tipo de numero que soporta decimales
+    <comentario>alternativa correcta</comentario></alternativa>
+    <alternativa id="2" puntaje="0" tipo="distractor">tipo de Z que soporta decimales
+    <comentario>alternativa incorrecta</comentario></alternativa>
+    <alternativa id="3" puntaje="0" tipo="distractor">de estructura X que soporta decimales
+    <comentario>alternativa incorrecta</comentario></alternativa>
+    <alternativa id="4" puntaje="0" tipo="distractor">tipo de H que soporta decimales
+    <comentario>alternativa incorrecta</comentario></alternativa>
+  </sustitutos>
 </pregunta>

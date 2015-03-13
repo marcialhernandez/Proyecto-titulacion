@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #import sys
 from archivos import nombres, xmlSalida
-from clases import xmlEntrada, alternativa
+from clases import xmlEntrada, alternativa, plantilla
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
@@ -13,7 +13,7 @@ except ImportError:
 def preguntaDefParser(raizXmlEntrada,nombreArchivo):
     puntaje=0
     tipo=""
-    alternativas=list()
+    conjuntoAlternativas=dict()
     comentarioAlternativa=""
     for subRaiz in raizXmlEntrada.iter('pregunta'):
         puntaje=int((subRaiz.attrib['puntaje']))
@@ -25,8 +25,21 @@ def preguntaDefParser(raizXmlEntrada,nombreArchivo):
             comentarioAlternativa=""
             for textoAnexo in elem.iter('comentario'):
                 comentarioAlternativa=comentarioAlternativa+" "+textoAnexo.text
-            alternativas.append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
-    return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,alternativas,termino=termino)
+                if elem.attrib['id'] in conjuntoAlternativas.keys():
+                    conjuntoAlternativas[elem.attrib['id']].append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
+                else:
+                    conjuntoAlternativas[elem.attrib['id']]=list()
+                    conjuntoAlternativas[elem.attrib['id']].append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
+    for subRaiz in raizXmlEntrada.iter('sustitutos'):
+        for elem in subRaiz:
+            comentarioAlternativa=""
+            for textoAnexo in elem.iter('comentario'):
+                comentarioAlternativa=comentarioAlternativa+" "+textoAnexo.text
+                if elem.attrib['id'] in conjuntoAlternativas.keys():
+                    conjuntoAlternativas[elem.attrib['id']].append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
+                else:
+                    pass
+    return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,termino=termino)
 
 #Funcion que analiza cada Xml de entrada
 #Si este es de tipo Definicion, se parsea con la funcion
@@ -61,35 +74,38 @@ def recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
                 validaPlantilla=True
                      
         if validaPlantilla==True:
-            plantillasValidas.append(arbolXmlPlantillaEntrada)
+            enunciado=""
+            for subRaiz in arbolXmlPlantillaEntrada.iter():
+                if subRaiz.tag=='glosa':
+                    enunciado=enunciado+subRaiz.text
+                if subRaiz.tag=='termino':
+                    enunciado=enunciado+' @termino'
+            #plantillasValidas.append(arbolXmlPlantillaEntrada)
+            plantillasValidas.append(plantilla.plantilla(tipoPregunta,enunciado.rstrip()))
     return plantillasValidas
     
 def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject): #,xmlEntradaObject):
     tipoPregunta=nombres.nombreScript(__file__)
     for plantilla in recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
         plantillaSalida=xmlSalida.plantillaGenericaSalida()
-        for subRaizPlantilla in plantilla.iter():
-            for subRaizSalida in plantillaSalida.iter():
+        for subRaizSalida in plantillaSalida.iter():
                 if subRaizSalida.tag=='plantilla':
                     subRaizSalida.set('tipo',xmlEntradaObject.tipo)
-                if subRaizPlantilla.tag=='enunciado' and subRaizSalida.tag=='enunciado':
-                    for elem in subRaizPlantilla:
-                        if elem.tag=='glosa':
-                            hijo=ET.SubElement(subRaizSalida, 'glosa')
-                            hijo.text=elem.text
-                        if elem.tag=='termino':
-                            hijo=ET.SubElement(subRaizSalida, 'termino')
-                            hijo.text=xmlEntradaObject.termino
-                    for alternativa in xmlEntradaObject.alternativas:
-                        alternativa=alternativa.__dict__
-                        opcion = ET.SubElement(subRaizSalida, 'alternativa')
-                        opcion.text=alternativa['glosa']
-                        opcion.set('puntaje',str(alternativa['puntaje']))
-                        opcion.set('id',str(alternativa['llave']))
-                        hijo=ET.SubElement(opcion, 'comentario')
-                        hijo.text=alternativa['comentario']
-        print ET.tostring(plantillaSalida, 'utf-8', method="xml")
-        #ET.dump(plantillaSalida)
+                if subRaizSalida.tag=='enunciado':
+                    subRaizSalida.text=plantilla.enunciado.replace('@termino',xmlEntradaObject.termino)
+                if subRaizSalida.tag=='opciones':
+                    for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas3(4):
+                        for elem in subRaizSalida.getchildren():
+                            subRaizSalida.remove(elem)
+                        for alternativa in conjuntoAlternativas:
+                            opcion = ET.SubElement(subRaizSalida, 'alternativa')
+                            opcion.text=alternativa.glosa
+                            opcion.set('puntaje',alternativa.puntaje)
+                            opcion.set('id',alternativa.llave)
+                            opcion.set('tipo',alternativa.tipo)
+                            hijo=ET.SubElement(opcion, 'comentario')
+                            hijo.text=alternativa.comentario
+                        print ET.tostring(plantillaSalida, 'utf-8', method="xml")
     pass
 
 # Declaracion de directorio de entradas
