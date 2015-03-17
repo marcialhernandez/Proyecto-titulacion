@@ -41,7 +41,7 @@ def despejaAlternativas(conjuntoAlternativas):
             return False
         else:
             listaLlaves.append(alternativa.llave)
-        return True
+    return True
 
 def validaConjuntoAlternativas(conjuntoAlternativas):
     indicaExistenciaRespuesta=False

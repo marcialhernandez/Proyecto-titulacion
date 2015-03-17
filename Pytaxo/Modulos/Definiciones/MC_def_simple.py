@@ -7,6 +7,17 @@ try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
+import argparse, hashlib
+
+#Funcion que analiza argumentos ingresados por comando al ejecutar la funcion
+#Retorna la cantidad de alternativas ingresada por el usuario, en caso que no
+#se detecte numero alguno ingresado, retorna valor por defecto que es 4
+def argParse():
+    parser = argparse.ArgumentParser(description='Cantidad de alternativas presentes al momento de generar las preguntas')
+    parser.add_argument('-c', required=False,type=int, default=4,
+                    help='Especifica la cantidad de alternativas',
+                    metavar="CantidadDeAlternativas")
+    return parser.parse_args().c
 
 #Funcion que retorna un objeto tipo xmlEntrada a partir de un
 #xml enfocado a definir un termino
@@ -84,27 +95,34 @@ def recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
             plantillasValidas.append(plantilla.plantilla(tipoPregunta,enunciado.rstrip()))
     return plantillasValidas
     
-def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject): #,xmlEntradaObject):
+def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas): #,xmlEntradaObject):
     tipoPregunta=nombres.nombreScript(__file__)
     for plantilla in recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
         plantillaSalida=xmlSalida.plantillaGenericaSalida()
         for subRaizSalida in plantillaSalida.iter():
                 if subRaizSalida.tag=='plantilla':
                     subRaizSalida.set('tipo',xmlEntradaObject.tipo)
+                    subRaizSalida.set('id',xmlEntradaObject.id)
                 if subRaizSalida.tag=='enunciado':
                     subRaizSalida.text=plantilla.enunciado.replace('@termino',xmlEntradaObject.termino)
                 if subRaizSalida.tag=='opciones':
-                    for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas3(4):
+                    for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas(cantidadAlternativas):
+                        #Se concatena el texto de todas las alternativas
+                        glosasAlternativas=""
                         for elem in subRaizSalida.getchildren():
                             subRaizSalida.remove(elem)
                         for alternativa in conjuntoAlternativas:
                             opcion = ET.SubElement(subRaizSalida, 'alternativa')
                             opcion.text=alternativa.glosa
+                            glosasAlternativas+=alternativa.glosa
                             opcion.set('puntaje',alternativa.puntaje)
                             opcion.set('id',alternativa.llave)
                             opcion.set('tipo',alternativa.tipo)
                             hijo=ET.SubElement(opcion, 'comentario')
                             hijo.text=alternativa.comentario
+                        #A partir del texto concatenado, se crea una unica ID que representa las alternativas
+                        #Esta ID se asigna a un nuevo atributo a la subRaiz 'opciones'
+                        subRaizSalida.set('id',hashlib.sha256(glosasAlternativas).hexdigest())
                         print ET.tostring(plantillaSalida, 'utf-8', method="xml")
     pass
 
@@ -116,11 +134,14 @@ tipoPregunta='definicion'
 listaXmlEntrada=list()
 
 # Almacenamiento usando el parser para este tipo de pregunta
+
+cantidadAlternativas=argParse()
+
 if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
     listaXmlEntrada=lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
 
 for cadaXmlEntrada in listaXmlEntrada:
-    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada)
+    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cantidadAlternativas)
 
 #La forma para quitar los signos que no fueron pasados correctamente desde
 #la entrada es la siguiente

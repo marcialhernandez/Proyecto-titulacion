@@ -1,5 +1,5 @@
 from archivos import nombres,xmlSalida
-import alternativa, itertools, operator
+import alternativa, itertools, operator, hashlib
 from archivos.xmlSalida import despejaAlternativas
 
 class xmlEntrada:
@@ -13,14 +13,17 @@ class xmlEntrada:
         self.tipo=tipo
         self.puntaje=puntaje
         self.alternativas=alternativas
+        self.id="NULL"
         #Atributos solo de preguntas tipo Definicion
         if self.tipo=="definicion":
             self.termino=kwargs['termino']
+            self.id=hashlib.sha256(self.termino).hexdigest()
             #Lista de alternativas de la forma [distractor,{'ponderacion':ponderacion}]
         if self.tipo=="enunciadoIncompleto":
             #Lista donde cada elemento es parte del enunciado ordenado de forma
             #secuencial
             self.enunciadoIncompleto=kwargs['enunciadoIncompleto']
+            #self.id=hashlib.sha256(self.enunciadoIncompleto).hexdigest()
             #Lista donde cada elemento son las respuestas del enunciado
             #ordenadas de forma secuencial
             self.respuestas=kwargs['respuestas']
@@ -56,50 +59,18 @@ class xmlEntrada:
         return alternativas
     #falta reordenar las alternativas pues en este caso siempre la correcta sera la primera
     
-    def agrupamientoAlternativas(self):
-        listadeListadeAlternativas=list()
-        for llave in self.alternativas.keys():
-            listadeListadeAlternativas.append(self.alternativas[llave])
-        listadeListadeAlternativas=list(itertools.product(*listadeListadeAlternativas))
-        for conjuntoAlternativas in listadeListadeAlternativas:
-            if xmlSalida.despejaAlternativas(conjuntoAlternativas)==False:
-                del conjuntoAlternativas
-        return listadeListadeAlternativas
-
-    def agrupamientoAlternativas2(self,cantidadAlternativas):
-        listaDeListadeAlternativas=list()
-        listaDeAlternativasValidas=list()
-        conjuntoPosiblesAlternativas2=list()
-        for llave in self.alternativas.keys():
-            listaDeListadeAlternativas.append(self.alternativas[llave])
-        listadeListadeAlternativas=list(itertools.combinations(listaDeListadeAlternativas,cantidadAlternativas))
-        for conjuntoPosiblesAlternativas in listadeListadeAlternativas:
-            for conjuntoAlternativas in map(list, conjuntoPosiblesAlternativas2):
-                if xmlSalida.validaConjuntoAlternativas(conjuntoAlternativas)==False:
-                    #del conjuntoAlternativas
-                    conjuntoPosiblesAlternativas2.remove(conjuntoAlternativas)
-        #for conjuntoPosiblesAlternativas in listadeListadeAlternativas:
-            listaDeAlternativasValidas+=list(itertools.product(*conjuntoPosiblesAlternativas))
-        listaDeAlternativasValidas = map(list, listaDeAlternativasValidas)
-        print len(listaDeAlternativasValidas)
-        for conjuntoAlternativas in listaDeAlternativasValidas[:]:
-            if xmlSalida.despejaAlternativas(conjuntoAlternativas)==False:
-                listaDeAlternativasValidas.remove(conjuntoAlternativas)
-            else:
-                pass
-               #Se ordenan las alternativas por largo
-               #conjuntoAlternativas.sort(key = operator.attrgetter('glosa'))
-               #conjuntoAlternativas. (key=lambda x: x.glosa)
-        print len(listaDeAlternativasValidas)
-        return listaDeAlternativasValidas
-
-    def agrupamientoAlternativas3(self,cantidadAlternativas):
+    def agrupamientoAlternativas(self,cantidadAlternativas):
         listaDeListaDeAlternativas=list()
         listaDeAlternativasValidas=list()
         for llave in self.alternativas.keys():
             listaDeListaDeAlternativas.append(self.alternativas[llave])
         for posiblesCombinacionesAlternativas in list(itertools.combinations(listaDeListaDeAlternativas,cantidadAlternativas)):
-            for posiblesConjuntos in list(itertools.product(*posiblesCombinacionesAlternativas)):
-                if xmlSalida.validaConjuntoAlternativas(posiblesConjuntos)==True:
-                        listaDeAlternativasValidas.append(posiblesConjuntos)
-        return listaDeAlternativasValidas
+            banderaPresentaACorrecta=False
+            for alternativas in posiblesCombinacionesAlternativas:
+                if alternativas[0].tipo=='solucion':
+                    banderaPresentaACorrecta=True
+            if banderaPresentaACorrecta==True:                          
+                for posiblesConjuntos in list(itertools.product(*posiblesCombinacionesAlternativas)):
+                    listaDeAlternativasValidas.append(posiblesConjuntos)
+        #print len(listaDeAlternativasValidas)
+        return listaDeAlternativasValidas    

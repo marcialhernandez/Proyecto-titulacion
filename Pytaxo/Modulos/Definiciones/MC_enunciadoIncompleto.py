@@ -7,6 +7,17 @@ try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
+import argparse
+
+#Funcion que analiza argumentos ingresados por comando al ejecutar la funcion
+#Retorna la cantidad de alternativas ingresada por el usuario, en caso que no
+#se detecte numero alguno ingresado, retorna valor por defecto que es 4
+def argParse():
+    parser = argparse.ArgumentParser(description='Cantidad de alternativas presentes al momento de generar las preguntas')
+    parser.add_argument('-c', required=False,type=int, default=4,
+                    help='Especifica la cantidad de alternativas',
+                    metavar="CantidadDeAlternativas")
+    return parser.parse_args().c
 
 #Funcion que retorna un objeto tipo xmlEntrada a partir de un
 #xml enfocado a completar un enunciado
