@@ -8,3 +8,6 @@ class alternativa:
         self.puntaje=puntaje
         self.glosa=glosa
         self.comentario=kwargs['comentario']
+    
+    def imprimeAlternativa(self):
+        return str(self.llave)+' '+str(self.tipo)+' '+str(self.puntaje)+' ' +str(self.glosa)

@@ -2,58 +2,21 @@
 # -*- coding: utf-8 -*-
 #import sys
 from archivos import nombres, xmlSalida
-from clases import xmlEntrada
+from clases import xmlEntrada, alternativa
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
-import argparse
+import argparse, hashlib
 
-#Funcion que analiza argumentos ingresados por comando al ejecutar la funcion
-#Retorna la cantidad de alternativas ingresada por el usuario, en caso que no
-#se detecte numero alguno ingresado, retorna valor por defecto que es 4
-def argParse():
-    parser = argparse.ArgumentParser(description='Cantidad de alternativas presentes al momento de generar las preguntas')
-    parser.add_argument('-c', required=False,type=int, default=4,
-                    help='Especifica la cantidad de alternativas',
-                    metavar="CantidadDeAlternativas")
-    return parser.parse_args().c
 
-#Funcion que retorna un objeto tipo xmlEntrada a partir de un
-#xml enfocado a completar un enunciado
-def preguntaEnunciadoIncompletoParser(raizXmlEntrada,nombreArchivo):
-    puntaje=0
-    tipo=""
-    enunciadoIncompleto=list()
-    respuestas=list()
-    distractores=list()
-    for elem in raizXmlEntrada.iter('pregunta'):
-        puntaje=int((elem.attrib['puntaje']))
-        tipo=str(elem.attrib['tipo'])
-    for subRaiz in raizXmlEntrada:
-        if subRaiz.tag=='enunciado':
-            enunciadoIncompleto.append(subRaiz.text)
-        if subRaiz.tag=='blank':
-            enunciadoIncompleto.append('______')
-            respuestas.append(subRaiz.text)
-    for elem in raizXmlEntrada.iter('distractor'):
-        distractor=list()
-        distractor.append(elem.text)
-        distractor.append(elem.attrib)
-        distractores.append(distractor)
-    return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,distractores,enunciadoIncompleto=enunciadoIncompleto,respuestas=respuestas)
-
-#Funcion que analiza cada Xml de entrada
-#Si este es de tipo enunciadoIncompleto, se parsea con la funcion
-#preguntaEnunciadoIncompletoParser y se añade a una lista de xmlsFormateadas
-#Finalmente retorna esta lista
-def lecturaXmls(nombreDirectorioEntradas):
+def lecturaXmls(nombreDirectorioEntradas,tipo):
     listaXmlFormateadas=list()
     for xmlEntrada in nombres.fullEspecificDirectoryNames(nombreDirectorioEntradas):
         arbolXml = ET.ElementTree(file=xmlEntrada)
         raizXml=arbolXml.getroot()
-        if raizXml.attrib['tipo']=='enunciadoIncompleto':
-            listaXmlFormateadas.append(preguntaEnunciadoIncompletoParser(raizXml,nombres.obtieneNombreArchivo(xmlEntrada)))
+        if raizXml.attrib['tipo']==tipo:
+            listaXmlFormateadas.append(xmlSalida.preguntaParser(raizXml,nombres.obtieneNombreArchivo(xmlEntrada)))
     
     return listaXmlFormateadas
 
@@ -62,32 +25,56 @@ def lecturaXmls(nombreDirectorioEntradas):
 #su mismo tipo, luego una vez completada la pregunta, se imprime
 #por pantalla para que la informacion pueda ser recogida por el programa
 #principal
-def retornaPlantilla(xmlEntradaObject): #,xmlEntradaObject):
-    raizXml=xmlSalida.plantillaGenericaSalida()
-    for subRaiz in raizXml.iter():
-        if subRaiz.tag==('plantilla'):
-            subRaiz.set('tipo',xmlEntradaObject.tipo)
-        if subRaiz.tag==('enunciado'):
-            subRaiz.set('last',"true")
-            subRaiz.text=xmlEntradaObject.retornaEnunciadoIncompleto()
-        if subRaiz.tag==('opciones'):
-            for alternativa in xmlEntradaObject.retornaAlternativas():
-                subRaizAlternativa=ET.SubElement(subRaiz,'alternativa')
-                subRaizAlternativa.text=alternativa[0]
-                subRaizAlternativa.set('ponderacion',str(alternativa[1]['ponderacion']))
-    ET.dump(raizXml)
-    #raizXml.write(sys.stdout,pretty_print=True)                
+def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas): #,xmlEntradaObject):
+    tipoPregunta=nombres.nombreScript(__file__)
+    #for plantilla in recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
+    plantillaSalida=xmlSalida.plantillaGenericaSalida()
+    for subRaizSalida in plantillaSalida.iter():
+            if subRaizSalida.tag=='plantilla':
+                subRaizSalida.set('tipo',xmlEntradaObject.tipo)
+                subRaizSalida.set('id',xmlEntradaObject.id)
+            if subRaizSalida.tag=='enunciado':
+                subRaizSalida.text=xmlEntradaObject.enunciado
+            if subRaizSalida.tag=='opciones':
+                for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas(cantidadAlternativas):
+                    #Se concatena el texto de todas las alternativas
+                    glosasAlternativas=""
+                    for elem in subRaizSalida.getchildren():
+                        subRaizSalida.remove(elem)
+                    for alternativa in conjuntoAlternativas:
+                        opcion = ET.SubElement(subRaizSalida, 'alternativa')
+                        opcion.text=alternativa.glosa
+                        glosasAlternativas+=alternativa.glosa
+                        opcion.set('puntaje',alternativa.puntaje)
+                        opcion.set('id',alternativa.llave)
+                        opcion.set('tipo',alternativa.tipo)
+                        hijo=ET.SubElement(opcion, 'comentario')
+                        hijo.text=alternativa.comentario
+                    #A partir del texto concatenado, se crea una unica ID que representa las alternativas
+                    #Esta ID se asigna a un nuevo atributo a la subRaiz 'opciones'
+                    subRaizSalida.set('id',hashlib.sha256(glosasAlternativas).hexdigest())
+                    print ET.tostring(plantillaSalida, 'utf-8', method="xml")
     pass
+
 
 # Declaracion de directorio de entradas
 nombreDirectorioEntradas="./Entradas/Definiciones"
 nombreDirectorioPlantillas="./Plantillas"
 nombreCompilador="python"
+tipoPregunta="enunciadoIncompleto"
 listaXmlEntrada=list()
 
-# Almacenamiento usando el parser para este tipo de pregunta
+cantidadAlternativas=xmlSalida.argParse()
+
 if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
-    listaXmlEntrada=lecturaXmls(nombreDirectorioEntradas)
+    listaXmlEntrada=lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
 
 for cadaXmlEntrada in listaXmlEntrada:
-    retornaPlantilla(cadaXmlEntrada)
+    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cantidadAlternativas)
+
+# # Almacenamiento usando el parser para este tipo de pregunta
+# if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
+#     listaXmlEntrada=lecturaXmls(nombreDirectorioEntradas)
+# 
+# for cadaXmlEntrada in listaXmlEntrada:
+#     retornaPlantilla(cadaXmlEntrada)

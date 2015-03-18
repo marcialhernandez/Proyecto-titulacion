@@ -9,52 +9,9 @@ except ImportError:
     import xml.etree.ElementTree as ET
 import argparse, hashlib
 
-#Funcion que analiza argumentos ingresados por comando al ejecutar la funcion
-#Retorna la cantidad de alternativas ingresada por el usuario, en caso que no
-#se detecte numero alguno ingresado, retorna valor por defecto que es 4
-def argParse():
-    parser = argparse.ArgumentParser(description='Cantidad de alternativas presentes al momento de generar las preguntas')
-    parser.add_argument('-c', required=False,type=int, default=4,
-                    help='Especifica la cantidad de alternativas',
-                    metavar="CantidadDeAlternativas")
-    return parser.parse_args().c
-
-#Funcion que retorna un objeto tipo xmlEntrada a partir de un
-#xml enfocado a definir un termino
-def preguntaDefParser(raizXmlEntrada,nombreArchivo):
-    puntaje=0
-    tipo=""
-    conjuntoAlternativas=dict()
-    comentarioAlternativa=""
-    for subRaiz in raizXmlEntrada.iter('pregunta'):
-        puntaje=int((subRaiz.attrib['puntaje']))
-        tipo=str(subRaiz.attrib['tipo'])
-    for subRaiz in raizXmlEntrada.iter('termino'):
-        termino=subRaiz.text
-    for subRaiz in raizXmlEntrada.iter('opciones'):
-        for elem in subRaiz:
-            comentarioAlternativa=""
-            for textoAnexo in elem.iter('comentario'):
-                comentarioAlternativa=comentarioAlternativa+" "+textoAnexo.text
-                if elem.attrib['id'] in conjuntoAlternativas.keys():
-                    conjuntoAlternativas[elem.attrib['id']].append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
-                else:
-                    conjuntoAlternativas[elem.attrib['id']]=list()
-                    conjuntoAlternativas[elem.attrib['id']].append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
-    for subRaiz in raizXmlEntrada.iter('sustitutos'):
-        for elem in subRaiz:
-            comentarioAlternativa=""
-            for textoAnexo in elem.iter('comentario'):
-                comentarioAlternativa=comentarioAlternativa+" "+textoAnexo.text
-                if elem.attrib['id'] in conjuntoAlternativas.keys():
-                    conjuntoAlternativas[elem.attrib['id']].append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
-                else:
-                    pass
-    return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,termino=termino)
-
 #Funcion que analiza cada Xml de entrada
-#Si este es de tipo Definicion, se parsea con la funcion
-#preguntaDefParser y se añade a una lista de xmlsFormateadas
+#Si este es de un cierto tipo indicado por la entrada, se parsea con la funcion
+#preguntaParser y se añade a una lista de xmlsFormateadas
 #Finalmente retorna esta lista
 def lecturaXmls(nombreDirectorioEntradas,tipo):
     listaXmlFormateadas=list()
@@ -62,7 +19,7 @@ def lecturaXmls(nombreDirectorioEntradas,tipo):
         arbolXml = ET.ElementTree(file=xmlEntrada)
         raizXml=arbolXml.getroot()
         if raizXml.attrib['tipo']==tipo: #'definicion':
-            listaXmlFormateadas.append(preguntaDefParser(raizXml,nombres.obtieneNombreArchivo(xmlEntrada)))
+            listaXmlFormateadas.append(xmlSalida.preguntaParser(raizXml,nombres.obtieneNombreArchivo(xmlEntrada)))
     
     return listaXmlFormateadas
 
@@ -135,7 +92,7 @@ listaXmlEntrada=list()
 
 # Almacenamiento usando el parser para este tipo de pregunta
 
-cantidadAlternativas=argParse()
+cantidadAlternativas=xmlSalida.argParse()
 
 if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
     listaXmlEntrada=lecturaXmls(nombreDirectorioEntradas, tipoPregunta)

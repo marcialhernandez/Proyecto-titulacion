@@ -1,10 +1,21 @@
 <?xml version='1.0' encoding='utf-8'?>
 <pregunta puntaje="2" tipo="enunciadoIncompleto"> 
-  <enunciado>Los datos que soportan decimales son conocidos como</enunciado>
+  <enunciado>
+  <glosa>Los datos que soportan decimales son conocidos como</glosa>
   <blank>flotantes</blank>
-  <distractores>
-    <distractor ponderacion="0">Strings</distractor>
-    <distractor ponderacion="0">Ints</distractor>
-    <distractor ponderacion="0">Listas</distractor>
-  </distractores>
+  </enunciado>
+  <opciones>
+    <alternativa id="2" puntaje="0" tipo="distractor">Strings
+    <comentario>alternativa incorrecta</comentario></alternativa>
+    <alternativa id="3" puntaje="0" tipo="distractor">Ints
+    <comentario>alternativa incorrecta</comentario></alternativa>
+    <alternativa id="4" puntaje="0" tipo="distractor">Listas
+    <comentario>alternativa incorrecta</comentario></alternativa>
+  </opciones>
+  <sustitutos>
+    <alternativa id="2" puntaje="0" tipo="distractor">Cadena de Texto
+    <comentario>alternativa incorrecta</comentario></alternativa>
+    <alternativa id="3" puntaje="0" tipo="distractor">Numeros enteros
+    <comentario>alternativa incorrecta</comentario></alternativa>
+  </sustitutos>
 </pregunta>

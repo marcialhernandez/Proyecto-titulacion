@@ -1,6 +1,5 @@
-from archivos import nombres,xmlSalida
-import alternativa, itertools, operator, hashlib
-from archivos.xmlSalida import despejaAlternativas
+from archivos import nombres
+import itertools, hashlib
 
 class xmlEntrada:
     #atributos estaticos
@@ -22,11 +21,12 @@ class xmlEntrada:
         if self.tipo=="enunciadoIncompleto":
             #Lista donde cada elemento es parte del enunciado ordenado de forma
             #secuencial
-            self.enunciadoIncompleto=kwargs['enunciadoIncompleto']
+            self.enunciado=kwargs['enunciado']
+            self.id=hashlib.sha256(self.enunciado).hexdigest()
             #self.id=hashlib.sha256(self.enunciadoIncompleto).hexdigest()
             #Lista donde cada elemento son las respuestas del enunciado
             #ordenadas de forma secuencial
-            self.respuestas=kwargs['respuestas']
+            #self.respuestas=kwargs['respuestas']
     
     def printContenidoEntrada(self):
         mensaje="Nombre entrada: {nombre} \nPuntaje: {puntaje}\nTermino: {termino}\nDefinicion: {definicion}\nDistractores: {alternativas} "
@@ -73,4 +73,20 @@ class xmlEntrada:
                 for posiblesConjuntos in list(itertools.product(*posiblesCombinacionesAlternativas)):
                     listaDeAlternativasValidas.append(posiblesConjuntos)
         #print len(listaDeAlternativasValidas)
-        return listaDeAlternativasValidas    
+        return listaDeAlternativasValidas
+
+    def agrupamientoAlternativas2(self,cantidadAlternativas):
+        listaDeListaDeAlternativas=list()
+        listaDeAlternativasValidas=list()
+        for llave in self.alternativas.keys():
+            listaDeListaDeAlternativas.append(self.alternativas[llave])
+        for posiblesCombinacionesAlternativas in list(itertools.combinations(listaDeListaDeAlternativas,cantidadAlternativas)):
+            banderaPresentaACorrecta=False
+            for alternativas in posiblesCombinacionesAlternativas:
+                if alternativas[0].__dict__['solucion']=='solucion':
+                    banderaPresentaACorrecta=True
+            if banderaPresentaACorrecta==True:                          
+                for posiblesConjuntos in list(itertools.product(*posiblesCombinacionesAlternativas)):
+                    listaDeAlternativasValidas.append(posiblesConjuntos)
+        #print len(listaDeAlternativasValidas)
+        return listaDeAlternativasValidas
