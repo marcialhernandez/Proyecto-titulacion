@@ -3,6 +3,7 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 from clases import alternativa,xmlEntrada
+from archivos import nombres
 import hashlib, argparse
     
 def plantillaGenericaSalida():
@@ -57,7 +58,7 @@ def analizaTipoDefinicion(subRaiz):
 
 def analizaTipoEnunciadoIncompleto(subRaiz):
     pass
-    
+
 def preguntaParser(raizXmlEntrada,nombreArchivo):
     puntaje=0
     tipo=""
@@ -83,27 +84,20 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
                     respuestas.append(elem.text)
         enunciado=' '.join(enunciadoIncompleto)
         alternativaSolucion=list()
-        alternativaSolucion.append(alternativa.alternativa(hashlib.sha256('solucion').hexdigest(),'solucion',str(puntaje),'-'.join(respuestas),comentario='Alternativa Correcta'))
+        alternativaSolucion.append(alternativa.alternativa(hashlib.sha256('solucion').hexdigest(),'solucion',str(puntaje),'-'.join(respuestas),comentario='Alternativa Correcta',numeracion=1))
         conjuntoAlternativas[alternativaSolucion[0].llave]=alternativaSolucion
     for subRaiz in raizXmlEntrada.iter('opciones'):
-        for elem in subRaiz:
-            comentarioAlternativa=""
-            for textoAnexo in elem.iter('comentario'):
-                comentarioAlternativa=comentarioAlternativa+" "+textoAnexo.text
-                if elem.attrib['id'] in conjuntoAlternativas.keys():
-                    conjuntoAlternativas[elem.attrib['id']].append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
+        for opcion in raizXmlEntrada.iter('alternativa'):
+            for glosaOpcion in opcion.iter('glosa'):
+                comentarioAlternativa=""
+                for comentarioGlosa in glosaOpcion.iter('comentario'):
+                    comentarioAlternativa=comentarioAlternativa+" "+str(comentarioGlosa.text)
+                if opcion.attrib['id'] in conjuntoAlternativas.keys():
+                    largoLista=len(conjuntoAlternativas[opcion.attrib['id']])
+                    conjuntoAlternativas[opcion.attrib['id']].append(alternativa.alternativa(opcion.attrib['id'],opcion.attrib['tipo'],opcion.attrib['puntaje'],glosaOpcion.text.rstrip(),comentario=comentarioAlternativa,numeracion=largoLista+1))
                 else:
-                    conjuntoAlternativas[elem.attrib['id']]=list()
-                    conjuntoAlternativas[elem.attrib['id']].append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
-    for subRaiz in raizXmlEntrada.iter('sustitutos'):
-        for elem in subRaiz:
-            comentarioAlternativa=""
-            for textoAnexo in elem.iter('comentario'):
-                comentarioAlternativa=comentarioAlternativa+" "+textoAnexo.text
-                if elem.attrib['id'] in conjuntoAlternativas.keys():
-                    conjuntoAlternativas[elem.attrib['id']].append(alternativa.alternativa(elem.attrib['id'],elem.attrib['tipo'],elem.attrib['puntaje'],elem.text.rstrip(),comentario=comentarioAlternativa))
-                else:
-                    pass
+                    conjuntoAlternativas[opcion.attrib['id']]=list()
+                    conjuntoAlternativas[opcion.attrib['id']].append(alternativa.alternativa(opcion.attrib['id'],opcion.attrib['tipo'],opcion.attrib['puntaje'],glosaOpcion.text.rstrip(),comentario=comentarioAlternativa,numeracion=1))
     return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,termino=termino,enunciado=enunciado)
 
 #Funcion que analiza argumentos ingresados por comando al ejecutar la funcion
@@ -116,3 +110,37 @@ def argParse():
                     metavar="CantidadDeAlternativas")
     return parser.parse_args().c
 
+def incrustaAlternativasXml(subRaizOpciones,listaAlternativas):
+    #Se concatena el texto de todas las alternativas
+    glosasAlternativas=""
+    identificadorPregunta=""
+    for elem in subRaizOpciones.getchildren():
+        subRaizOpciones.remove(elem)
+    for alternativa in listaAlternativas:
+        identificadorPregunta+=alternativa.identificador()
+        opcion = ET.SubElement(subRaizOpciones, 'alternativa')
+        opcion.text=alternativa.glosa
+        glosasAlternativas+=alternativa.glosa
+        opcion.set('puntaje',alternativa.puntaje)
+        opcion.set('id',alternativa.llave)
+        opcion.set('tipo',alternativa.tipo)
+        hijo=ET.SubElement(opcion, 'comentario')
+        hijo.text=alternativa.comentario
+    #A partir del texto concatenado, se crea una unica ID que representa las alternativas
+    #Esta ID se asigna a un nuevo atributo a la subRaiz 'opciones'
+    subRaizOpciones.set('id',hashlib.sha256(glosasAlternativas).hexdigest())
+    subRaizOpciones.set('idPreguntaGenerada',identificadorPregunta.rstrip())
+    pass
+
+#Funcion que analiza cada Xml de entrada
+#Si este es de un cierto tipo indicado por la entrada, se parsea con la funcion
+#preguntaParser y se agrega a una lista de xmlsFormateadas
+#Finalmente retorna esta lista
+def lecturaXmls(nombreDirectorioEntradas,tipo):
+    listaXmlFormateadas=list()
+    for xmlEntrada in nombres.fullEspecificDirectoryNames(nombreDirectorioEntradas):
+        arbolXml = ET.ElementTree(file=xmlEntrada)
+        raizXml=arbolXml.getroot()
+        if raizXml.attrib['tipo']==tipo: #'definicion':
+            listaXmlFormateadas.append(preguntaParser(raizXml,nombres.obtieneNombreArchivo(xmlEntrada)))
+    return listaXmlFormateadas

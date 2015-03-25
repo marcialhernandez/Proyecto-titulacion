@@ -2,23 +2,12 @@
 # -*- coding: utf-8 -*-
 #import sys
 from archivos import nombres, xmlSalida
-from clases import xmlEntrada, alternativa
+from clases import alternativa
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
-import argparse, hashlib
-
-
-def lecturaXmls(nombreDirectorioEntradas,tipo):
-    listaXmlFormateadas=list()
-    for xmlEntrada in nombres.fullEspecificDirectoryNames(nombreDirectorioEntradas):
-        arbolXml = ET.ElementTree(file=xmlEntrada)
-        raizXml=arbolXml.getroot()
-        if raizXml.attrib['tipo']==tipo:
-            listaXmlFormateadas.append(xmlSalida.preguntaParser(raizXml,nombres.obtieneNombreArchivo(xmlEntrada)))
-    
-    return listaXmlFormateadas
+import hashlib
 
 #Funcion que crea una nueva plantilla que corresponde a este tipo de pregunta
 #añadiendo los datos obtenidos desde la entrada de
@@ -36,15 +25,17 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
             if subRaizSalida.tag=='enunciado':
                 subRaizSalida.text=xmlEntradaObject.enunciado
             if subRaizSalida.tag=='opciones':
-                for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas(cantidadAlternativas):
+                for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas2(cantidadAlternativas):
                     #Se concatena el texto de todas las alternativas
                     glosasAlternativas=""
+                    identificadorPregunta=""
                     for elem in subRaizSalida.getchildren():
                         subRaizSalida.remove(elem)
                     for alternativa in conjuntoAlternativas:
                         opcion = ET.SubElement(subRaizSalida, 'alternativa')
                         opcion.text=alternativa.glosa
                         glosasAlternativas+=alternativa.glosa
+                        identificadorPregunta+=alternativa.identificador()
                         opcion.set('puntaje',alternativa.puntaje)
                         opcion.set('id',alternativa.llave)
                         opcion.set('tipo',alternativa.tipo)
@@ -53,9 +44,9 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                     #A partir del texto concatenado, se crea una unica ID que representa las alternativas
                     #Esta ID se asigna a un nuevo atributo a la subRaiz 'opciones'
                     subRaizSalida.set('id',hashlib.sha256(glosasAlternativas).hexdigest())
+                    subRaizSalida.set('idPreguntaGenerada',identificadorPregunta.rstrip())
                     print ET.tostring(plantillaSalida, 'utf-8', method="xml")
     pass
-
 
 # Declaracion de directorio de entradas
 nombreDirectorioEntradas="./Entradas/Definiciones"
@@ -67,7 +58,7 @@ listaXmlEntrada=list()
 cantidadAlternativas=xmlSalida.argParse()
 
 if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
-    listaXmlEntrada=lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
+    listaXmlEntrada=xmlSalida.lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
 
 for cadaXmlEntrada in listaXmlEntrada:
     retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cantidadAlternativas)

@@ -2,26 +2,11 @@
 # -*- coding: utf-8 -*-
 #import sys
 from archivos import nombres, xmlSalida
-from clases import xmlEntrada, alternativa, plantilla
+from clases import plantilla
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
-import argparse, hashlib
-
-#Funcion que analiza cada Xml de entrada
-#Si este es de un cierto tipo indicado por la entrada, se parsea con la funcion
-#preguntaParser y se añade a una lista de xmlsFormateadas
-#Finalmente retorna esta lista
-def lecturaXmls(nombreDirectorioEntradas,tipo):
-    listaXmlFormateadas=list()
-    for xmlEntrada in nombres.fullEspecificDirectoryNames(nombreDirectorioEntradas):
-        arbolXml = ET.ElementTree(file=xmlEntrada)
-        raizXml=arbolXml.getroot()
-        if raizXml.attrib['tipo']==tipo: #'definicion':
-            listaXmlFormateadas.append(xmlSalida.preguntaParser(raizXml,nombres.obtieneNombreArchivo(xmlEntrada)))
-    
-    return listaXmlFormateadas
 
 #Funcion que analiza la plantilla que corresponde a este tipo de pregunta
 #A esa plantilla se le añaden los datos obtenidos desde la entrada de
@@ -63,23 +48,8 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                 if subRaizSalida.tag=='enunciado':
                     subRaizSalida.text=plantilla.enunciado.replace('@termino',xmlEntradaObject.termino)
                 if subRaizSalida.tag=='opciones':
-                    for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas(cantidadAlternativas):
-                        #Se concatena el texto de todas las alternativas
-                        glosasAlternativas=""
-                        for elem in subRaizSalida.getchildren():
-                            subRaizSalida.remove(elem)
-                        for alternativa in conjuntoAlternativas:
-                            opcion = ET.SubElement(subRaizSalida, 'alternativa')
-                            opcion.text=alternativa.glosa
-                            glosasAlternativas+=alternativa.glosa
-                            opcion.set('puntaje',alternativa.puntaje)
-                            opcion.set('id',alternativa.llave)
-                            opcion.set('tipo',alternativa.tipo)
-                            hijo=ET.SubElement(opcion, 'comentario')
-                            hijo.text=alternativa.comentario
-                        #A partir del texto concatenado, se crea una unica ID que representa las alternativas
-                        #Esta ID se asigna a un nuevo atributo a la subRaiz 'opciones'
-                        subRaizSalida.set('id',hashlib.sha256(glosasAlternativas).hexdigest())
+                    for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas2(cantidadAlternativas):
+                        xmlSalida.incrustaAlternativasXml(subRaizSalida, conjuntoAlternativas)
                         print ET.tostring(plantillaSalida, 'utf-8', method="xml")
     pass
 
@@ -95,7 +65,7 @@ listaXmlEntrada=list()
 cantidadAlternativas=xmlSalida.argParse()
 
 if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
-    listaXmlEntrada=lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
+    listaXmlEntrada=xmlSalida.lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
 
 for cadaXmlEntrada in listaXmlEntrada:
     retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cantidadAlternativas)
