@@ -37,8 +37,8 @@ def recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
             plantillasValidas.append(plantilla.plantilla(tipoPregunta,enunciado.rstrip()))
     return plantillasValidas
     
-def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas): #,xmlEntradaObject):
-    tipoPregunta=nombres.nombreScript(__file__)
+def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas, tipoPregunta): #,xmlEntradaObject):
+    #tipoPregunta=nombres.nombreScript(__file__)
     for plantilla in recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
         plantillaSalida=xmlSalida.plantillaGenericaSalida()
         for subRaizSalida in plantillaSalida.iter():
@@ -62,13 +62,15 @@ listaXmlEntrada=list()
 
 # Almacenamiento usando el parser para este tipo de pregunta
 
-cantidadAlternativas=xmlSalida.argParse()
+#Ahora la entrada que indica la cantidad de alternativas viene incrustada como atributo en los respectivos
+#XML de entrada
+#cantidadAlternativas=xmlSalida.argParse()
 
 if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
     listaXmlEntrada=xmlSalida.lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
 
 for cadaXmlEntrada in listaXmlEntrada:
-    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cantidadAlternativas)
+    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cadaXmlEntrada.cantidadAlternativas,tipoPregunta)
 
 #La forma para quitar los signos que no fueron pasados correctamente desde
 #la entrada es la siguiente

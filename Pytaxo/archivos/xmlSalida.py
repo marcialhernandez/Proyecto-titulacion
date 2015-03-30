@@ -62,6 +62,7 @@ def analizaTipoEnunciadoIncompleto(subRaiz):
 def preguntaParser(raizXmlEntrada,nombreArchivo):
     puntaje=0
     tipo=""
+    cantidadAlternativas=0
     conjuntoAlternativas=dict()
     comentarioAlternativa=""
     termino="" #Para el tipo pregunta definicion
@@ -69,6 +70,7 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
     for subRaiz in raizXmlEntrada.iter('pregunta'):
         puntaje=int((subRaiz.attrib['puntaje']))
         tipo=str(subRaiz.attrib['tipo'])
+        cantidadAlternativas=int(subRaiz.attrib['cantidadAlternativas'])
     if tipo=='definicion':
         for subRaiz in raizXmlEntrada.iter('termino'):
             termino=subRaiz.text
@@ -86,6 +88,35 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
         alternativaSolucion=list()
         alternativaSolucion.append(alternativa.alternativa(hashlib.sha256('solucion').hexdigest(),'solucion',str(puntaje),'-'.join(respuestas),comentario='Alternativa Correcta',numeracion=1))
         conjuntoAlternativas[alternativaSolucion[0].llave]=alternativaSolucion
+    if tipo=='definicionPareada':
+        conjuntoTerminosPareados=dict()
+        conjuntoTerminosImpares=dict()
+        for subRaiz in raizXmlEntrada.iter('terminos'):
+            for glosa in subRaiz.iter('glosa'):
+                definicion=glosa.text
+                llaveTermino=glosa.attrib['id']
+                pozoPares=list()
+                pozoImpares=list()
+                for par in glosa.iter('par'):
+                    pozoPares.append(alternativa.alternativa(llaveTermino,'solucion',str(puntaje),par.text.rstrip()))
+                for inpar in glosa.iter('inpar'):
+                    textoComentario=""
+                    for comentario in inpar.iter('comentario'):
+                        textoComentario=textoComentario+' '+comentario.text
+                    textoComentario=textoComentario.lstrip()
+                    #agrego solo si existe el inpar
+                    if bool(inpar.text.rstrip())==True:
+                        pozoImpares.append(alternativa.alternativa(llaveTermino,'distractor','0',inpar.text.rstrip()))
+                conjuntoTerminosPareados[definicion.rstrip()]=pozoPares
+                #No es necesario agregar una llave si no tiene impares
+                if len(pozoImpares)>0:
+                    conjuntoTerminosImpares[definicion.rstrip()]=pozoImpares
+            conjuntoAlternativas['terminos']=conjuntoTerminosPareados
+            conjuntoAlternativas['distractores']=conjuntoTerminosImpares
+            #print conjuntoAlternativas['terminos'].keys()
+    #En la pregunta tipo definicion pareada la arquitectura del conjunto de alternativas cambia
+    #ahora es {'terminos':{'definicion':lista de alternativas (las diferentes definiciones)}}
+    #{'distractores':{'definicion':lista de distractores (los diferentes distractores)}}
     for subRaiz in raizXmlEntrada.iter('opciones'):
         for opcion in raizXmlEntrada.iter('alternativa'):
             for glosaOpcion in opcion.iter('glosa'):
@@ -98,7 +129,7 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
                 else:
                     conjuntoAlternativas[opcion.attrib['id']]=list()
                     conjuntoAlternativas[opcion.attrib['id']].append(alternativa.alternativa(opcion.attrib['id'],opcion.attrib['tipo'],opcion.attrib['puntaje'],glosaOpcion.text.rstrip(),comentario=comentarioAlternativa,numeracion=1))
-    return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,termino=termino,enunciado=enunciado)
+    return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,cantidadAlternativas,termino=termino,enunciado=enunciado)
 
 #Funcion que analiza argumentos ingresados por comando al ejecutar la funcion
 #Retorna la cantidad de alternativas ingresada por el usuario, en caso que no

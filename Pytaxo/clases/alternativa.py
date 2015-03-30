@@ -21,4 +21,4 @@ class alternativa:
     #alternativa tipo S/D (distractor/solucion) = F llave (refiere a que alternativa) + N numeracion (refiere a que sinonimo)
     
     def imprimeAlternativa(self):
-        return str(self.llave)+' '+str(self.tipo)+' '+str(self.puntaje)+' ' +str(self.glosa)
+        return str(self.glosa)+' ' #str(self.llave)+' '+str(self.tipo)+' '+str(self.puntaje)+' ' +str(self.glosa)
