@@ -9,6 +9,46 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 
+#No preserva el orden    
+def quitaDuplicados(seq):
+    return {}.fromkeys(seq).keys()
+    
+def retornaSignificadoCadena(cadenaSimbolos,xmlEntradaObject,distractores,solucion,cantidadAlternativas):
+    listaCombinatoria=list()
+    listaConjuntoAlternativas=list()
+    if '+' in cadenaSimbolos:
+        for simbolos in quitaDuplicados(cadenaSimbolos.split('+')):
+            for conjunto in retornaSignificadoSimbolo(simbolos, xmlEntradaObject, distractores, solucion):
+                if conjunto not in listaCombinatoria:
+                    listaCombinatoria.append(conjunto)
+        listaConjuntoDistractores=list(itertools.combinations(listaCombinatoria, cantidadAlternativas))
+        if len(listaConjuntoDistractores)>0:
+            for conjunto in listaConjuntoDistractores:
+            #A cada conjunto generado se le agrega su solucion
+                conjunto=list(conjunto)
+                conjunto.append(list(solucion))
+                listaConjuntoAlternativas.append(conjunto)
+        return listaConjuntoAlternativas
+    else:
+        listaConjuntoDistractores=list(itertools.combinations(retornaSignificadoSimbolo(cadenaSimbolos, xmlEntradaObject, distractores, solucion), cantidadAlternativas))
+        if len(listaConjuntoDistractores)>0:
+            for conjunto in listaConjuntoDistractores:
+                #A cada conjunto generado se le agrega su solucion
+                conjunto=list(conjunto)
+                conjunto.append(list(solucion))
+                listaConjuntoAlternativas.append(conjunto)
+        return listaConjuntoAlternativas
+
+def retornaSignificadoSimbolo(simbolo,xmlEntradaObject,distractores,solucion):
+    simbolo=simbolo.lstrip().rstrip().lower()
+    if simbolo.isdigit()==True:
+        if int(simbolo)<=0:
+            return list()
+        else:
+            return pozoDistractoresNesimo(xmlEntradaObject,distractores,int(simbolo),solucion=solucion)
+    else:
+        return list()
+
 def posiblesSolucionesYDistractoresConjunto(xmlEntradaObject,conjuntoTerminos):
     salida=dict()
     listaDeListaDeOpciones=list()
@@ -32,7 +72,6 @@ def pozoDistractoresNesimo(xmlEntradaObject,distractores,cantidadReemplazoDistra
     #Implica que es el primer ciclo
     if 'solucion' in kwargs.keys():
         pozoDistractoresN=list()
-        banderaAjustaReemplazos=False
         #Si quiere 0 reemplazos por los distractores, , es la solucion misma
         if cantidadReemplazoDistractores<=0 or len(distractores)==0:
             pozoDistractoresN.append(kwargs['solucion'])
@@ -115,46 +154,35 @@ def pozoDistractoresDouble(xmlEntradaObject,solucion,distractores):
                         break
                     contador+=1
     return pozoDistractoresD
-        
-def agrupamientoPareado(xmlEntradaObject,solucion,distractores,cantidadAlternativas,cantidadDistractoresTerms,**kwuargs):
-    if cantidadAlternativas<=1:
-        return list()
-    tipo=None 
-    if len(kwuargs.keys())==0:
-        tipo=2
-    if tipo==1: #Dificultad 1: Alternativas con 1 distractor
-        pass
-    elif tipo==2: #Dificultad 2: Alternativas con 1 distractor Mix 2 distractores
-        #Esto realiza el mix indicado
-        #opciones=itertools.combinations(itertools.chain(pozoDistractoresSingle(xmlEntradaObject,solucion,distractores),pozoDistractoresDouble(xmlEntradaObject,solucion,distractores)),cantidadAlternativas-1)
-        for conjunto in pozoDistractoresNesimo(xmlEntradaObject,distractores,cantidadDistractoresTerms,solucion=solucion):
-            print '@'
-            for lala in conjunto:
-                print lala.imprimeAlternativa()
-                pass  
-        
-#         pozoDistractoresSin=pozoDistractoresSingle(xmlEntradaObject,solucion,distractores)
-#         pozoDistractoresDou=pozoDistractoresDouble(xmlEntradaObject,solucion,distractores)
-#         for conjunto in pozoDistractoresSin:
-#             print '@'
-#             for lala in conjunto:
-#                 print lala.imprimeAlternativa()
-#                 pass  
-    elif tipo==3: #Dificultad 3: Alternativas con 1 distractor Mix 1 distractor Dislex
-        pass
-    elif tipo==4: #Dificultad 4: Alternativas con 2 distractores Mix 1 distractor Dislex
-        pass
-    else:       #Dificutad 5: Alternativas con soluciones Dislex
-        pass
-    pass
-        
-        
-#     for conjunto in pozoDistractoresDouble:
-#         print '@'
-#         for lala in conjunto:
-#             print lala.imprimeAlternativa()
-#     pass                       
-    
+
+#Admite entrada kwuargs[] 'especificacion' de la forma
+#2+1 ->alternativas derivadas de distractores con 1 y 2 reemplazos
+#1+1 ->alternativas derivadas de distractores con 1 reemplazo (se eliminan repetidos)
+#2 ->alternativas derivadas de distractores que tienen si o si 2 reemplazos
+#admite n sumas, pero entre más tenga, más recursos utiliza
+#ejemplo -> 1+2+3
+#0 ->retorna una lista vacia
+#0+1 -> genera alternativas derivadas de distractores que tienen si o si 1 reemplazo  
+#En caso que no se especifique, genera alternativas correspondientes a la entrada 1+2
+#Admite entrada kwuargs[] 'cantidadItems' para limitar cantidad de items generados
+
+def agrupamientoPareado(xmlEntradaObject,solucion,distractores,cantidadAlternativas,**kwuargs):
+    if 'especificacion' in kwuargs.keys():
+        return retornaSignificadoCadena(kwuargs['especificacion'],xmlEntradaObject,distractores,solucion,cantidadAlternativas)    
+    #default ->1+2
+    else:
+        return retornaSignificadoCadena('1+2',xmlEntradaObject,distractores,solucion,cantidadAlternativas-1)
+    #Valida el correcto funcionamiento, reemplazando el return por listaAlternativas
+#     print type(listaAlternativas)
+#     print len(listaAlternativas)
+#     for conjunto in listaAlternativas:
+#         print 'conjunto'
+#         z=0
+#         for elem in conjunto:
+#             print str(z)+')'
+#             z=+1
+#             for elem2 in elem:
+#                 print elem2.imprimeAlternativa()            
 
 #Funcion que analiza la plantilla que corresponde a este tipo de pregunta
 #A esa plantilla se le añaden los datos obtenidos desde la entrada de
@@ -197,12 +225,35 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
 #                     if '@termino' in subRaizSalida.text:
 #                         subRaizSalida.text=plantilla.enunciado.replace('@termino',xmlEntradaObject.termino)
                 if subRaizSalida.tag=='opciones':
-                    for conjuntoTerminos in xmlEntradaObject.barajaDefiniciones():
-                        solucionesYDistractores=posiblesSolucionesYDistractoresConjunto(xmlEntradaObject,conjuntoTerminos)
+                    for conjuntoDefiniciones in xmlEntradaObject.barajaDefiniciones():
+                        #Aqui se presenta cada posible pregunta
+                        solucionesYDistractores=posiblesSolucionesYDistractoresConjunto(xmlEntradaObject,conjuntoDefiniciones)
                         #Para cada solucion de la variante actual 
                         for solucion in solucionesYDistractores['soluciones']:
-                            print '!!!' 
-                            agrupamientoPareado(xmlEntradaObject,solucion,solucionesYDistractores['distractores'],cantidadAlternativas,5)
+                            
+                            #Estos conjunto de alternativas ya tienen su respectiva solucion integrada
+                            #Conjuntos de conjuntos de terminos ->tipo lista de lista
+                            for cadaConjuntoAlternativas in agrupamientoPareado(xmlEntradaObject,solucion,solucionesYDistractores['distractores'],cantidadAlternativas):
+                                
+                                #Conjunto de terminos -> tipo lista
+                                for cadaAlternativa in cadaConjuntoAlternativas:
+                                    #Se requiere convertir las listas de terminos en 1 alternativa!!
+                                    idAlternativa=''
+                                    comentariosAlternativa=''
+                                    glosaAlternativa=''
+                                    puntajeAlternativa=0
+                                    #Terminos ->tipo alternativa
+                                    for cadaTermino in cadaAlternativa:
+                                        pass
+                                
+                                #     for conjunto in listaAlternativas:
+#         print 'conjunto'
+#         z=0
+#         for elem in conjunto:
+#             print str(z)+')'
+#             z=+1
+#             for elem2 in elem:
+#                 print elem2.imprimeAlternativa()  
 #                     for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas2(cantidadAlternativas):
 #                         xmlSalida.incrustaAlternativasXml(subRaizSalida, conjuntoAlternativas)
 #                         print ET.tostring(plantillaSalida, 'utf-8', method="xml")
