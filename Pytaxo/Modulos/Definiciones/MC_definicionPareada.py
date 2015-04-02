@@ -290,9 +290,12 @@ def recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
             plantillasValidas.append(plantilla.plantilla(tipoPregunta,enunciado.rstrip()))
     return plantillasValidas
 
-def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas, tipoPregunta): #,xmlEntradaObject):
+def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas, tipoPregunta, **kwuargs): #,xmlEntradaObject):
     #tipoPregunta=nombres.nombreScript(__file__)
     contador=0
+    banderaEstado=False
+    if 'directorioSalida' in kwuargs.keys():
+        banderaEstado=True #Indica si se debe imprimir o no el estado de la cantidad de salidas
     for plantilla in recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
         plantillaSalida=xmlSalida.plantillaGenericaSalida()
         for subRaizSalida in plantillaSalida.iter():
@@ -312,7 +315,8 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                             subRaizDefinicion=ET.SubElement(seccionDefiniciones,'definicion')
                             subRaizDefinicion.text=definicion
                             idPreguntaGenerada+=definicion+' '
-                        for x in plantillaSalida.iter('plantilla'): x.set('id',hashlib.sha256(idPreguntaGenerada.rstrip()).hexdigest())               
+                        idPreguntaGenerada=hashlib.sha256(idPreguntaGenerada.rstrip()).hexdigest()
+                        for x in plantillaSalida.iter('plantilla'): x.set('id', idPreguntaGenerada)               
                         #Seccion donde estaran los terminos
                         seccionTerminos=ET.SubElement(subRaizSalida,'terminos')
                         #Seccion donde estaran las alternativas
@@ -348,12 +352,13 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                                 subRaizTermino=ET.SubElement(seccionTerminos,'posiblePar')
                                 subRaizTermino.text=cadaTermino.glosa
                                 subRaizTermino.set('id',cadaTermino.llave)
-                                
+                            #solucion provisional
+                            ordenamientoDiferente=0 #indica que es el mismo grupo de alternativas pero estan ordenados de forma diferente
                             for cadaConjunto in agrupamientoPareado(xmlEntradaObject,solucion,solucionesYDistractores['distractores'],cantidadAlternativas,especificacion=xmlEntradaObject.composicionDistractores, orderBy=xmlEntradaObject.criterioOrdenDistractores, creciente=xmlEntradaObject.ordenDistractoresCreciente):
                                 for elem in seccionAlternativas.getchildren():
                                     seccionAlternativas.remove(elem)
                                 glosasAlternativas=""
-                                idPreguntaGenerada=""
+                                idAlternativas=""
                                 for cadaTermino in cadaConjunto:
                                     subRaizAlternativa=ET.SubElement(seccionAlternativas,'alternativa')
                                     subRaizAlternativa.text=cadaTermino.glosa
@@ -363,19 +368,26 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                                     subRaizAlternativa.set('tipo',cadaTermino.tipo)
                                     subRaizComentario=ET.SubElement(subRaizAlternativa,'comentario')
                                     subRaizComentario.text=cadaTermino.comentario
-                                    idPreguntaGenerada+=cadaTermino.identificador()
-                                    subRaizSalida.set('idPreguntaGenerada',idPreguntaGenerada.rstrip())
-                                print ET.tostring(plantillaSalida, 'utf-8', method="xml")
+                                    idAlternativas+=cadaTermino.identificador()
+                                    subRaizSalida.set('idAlternativasGenerada',idAlternativas.rstrip())
+                                ordenamientoDiferente+=1
                                 contador+=1
-                                if contador==40:
-                                    return 0
-#     print contador                            
+                                if banderaEstado==True:
+                                    #Se instancia la plantilla como un elemento de element tree
+                                    xmlSalida.escribePlantilla(kwuargs['directorioSalida'],xmlEntradaObject.tipo, idPreguntaGenerada+' '+idAlternativas.rstrip()+' '+str(ordenamientoDiferente)+' '+str(contador), plantillaSalida,'xml')
+                                    
+                                else:
+                                    print ET.tostring(plantillaSalida, 'utf-8', method="xml")
+#                                 if contador==1:
+#                                     return 0
+    if banderaEstado==True:
+        print str(contador)+' Creados'                            
     pass
 
 # Declaracion de directorio de entradas
 nombreDirectorioEntradas="./Entradas/Definiciones"
 nombreDirectorioPlantillas="./Plantillas"
-nombreDirectorioSalidas="./Salidas"
+nombreDirectorioSalidas="Salidas"
 nombreCompilador="python"
 tipoPregunta='definicionPareada'
 listaXmlEntrada=list()
@@ -390,4 +402,4 @@ if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
     listaXmlEntrada=xmlSalida.lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
     
 for cadaXmlEntrada in listaXmlEntrada:
-    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cadaXmlEntrada.cantidadAlternativas,tipoPregunta)
+    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cadaXmlEntrada.cantidadAlternativas,tipoPregunta, directorioSalida=nombreDirectorioSalidas+'/'+tipoPregunta)

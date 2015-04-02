@@ -37,8 +37,12 @@ def recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
             plantillasValidas.append(plantilla.plantilla(tipoPregunta,enunciado.rstrip()))
     return plantillasValidas
     
-def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas, tipoPregunta): #,xmlEntradaObject):
+def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas, tipoPregunta, **kwuargs): #,xmlEntradaObject):
     #tipoPregunta=nombres.nombreScript(__file__)
+    contador=0
+    banderaEstado=False
+    if 'directorioSalida' in kwuargs.keys():
+        banderaEstado=True #Indica si se debe imprimir o no el estado de la cantidad de salidas
     for plantilla in recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
         plantillaSalida=xmlSalida.plantillaGenericaSalida()
         for subRaizSalida in plantillaSalida.iter():
@@ -49,13 +53,20 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                     subRaizSalida.text=plantilla.enunciado.replace('@termino',xmlEntradaObject.termino)
                 if subRaizSalida.tag=='opciones':
                     for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas2(cantidadAlternativas):
-                        xmlSalida.incrustaAlternativasXml(subRaizSalida, conjuntoAlternativas)
-                        print ET.tostring(plantillaSalida, 'utf-8', method="xml")
+                        contador+=1
+                        identificadorItem,identificadorAlternativas=xmlSalida.incrustaAlternativasXml(subRaizSalida, conjuntoAlternativas)
+                        if banderaEstado==True:
+                            xmlSalida.escribePlantilla(kwuargs['directorioSalida'],xmlEntradaObject.tipo, identificadorItem+' '+identificadorAlternativas+' '+str(contador), plantillaSalida,'xml')
+                        else:
+                            print ET.tostring(plantillaSalida, 'utf-8', method="xml")
+    if banderaEstado==True:
+        print str(contador)+' Creados'                            
     pass
 
 # Declaracion de directorio de entradas
 nombreDirectorioEntradas="./Entradas/Definiciones"
 nombreDirectorioPlantillas="./Plantillas"
+nombreDirectorioSalidas="Salidas"
 nombreCompilador="python"
 tipoPregunta='definicion'
 listaXmlEntrada=list()
@@ -70,7 +81,7 @@ if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
     listaXmlEntrada=xmlSalida.lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
 
 for cadaXmlEntrada in listaXmlEntrada:
-    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cadaXmlEntrada.cantidadAlternativas,tipoPregunta)
+    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cadaXmlEntrada.cantidadAlternativas,tipoPregunta, directorioSalida=nombreDirectorioSalidas+'/'+tipoPregunta)
 
 #La forma para quitar los signos que no fueron pasados correctamente desde
 #la entrada es la siguiente

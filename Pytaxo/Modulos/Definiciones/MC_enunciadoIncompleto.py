@@ -14,8 +14,12 @@ import hashlib
 #su mismo tipo, luego una vez completada la pregunta, se imprime
 #por pantalla para que la informacion pueda ser recogida por el programa
 #principal
-def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas): #,xmlEntradaObject):
+def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas, **kwuargs): #,xmlEntradaObject):
     plantillaSalida=xmlSalida.plantillaGenericaSalida()
+    contador=0
+    banderaEstado=False
+    if 'directorioSalida' in kwuargs.keys():
+        banderaEstado=True #Indica si se debe imprimir o no el estado de la cantidad de salidas
     for subRaizSalida in plantillaSalida.iter():
             if subRaizSalida.tag=='plantilla':
                 subRaizSalida.set('tipo',xmlEntradaObject.tipo)
@@ -41,14 +45,22 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                         hijo.text=alternativa.comentario
                     #A partir del texto concatenado, se crea una unica ID que representa las alternativas
                     #Esta ID se asigna a un nuevo atributo a la subRaiz 'opciones'
-                    subRaizSalida.set('id',hashlib.sha256(glosasAlternativas).hexdigest())
+                    identificadorItem=hashlib.sha256(glosasAlternativas).hexdigest()
+                    subRaizSalida.set('id',identificadorItem)
                     subRaizSalida.set('idPreguntaGenerada',identificadorPregunta.rstrip())
-                    print ET.tostring(plantillaSalida, 'utf-8', method="xml")
+                    contador+=1
+                    if banderaEstado==True:
+                        xmlSalida.escribePlantilla(kwuargs['directorioSalida'],xmlEntradaObject.tipo, identificadorItem+' '+identificadorPregunta.rstrip()+' '+str(contador), plantillaSalida,'xml')
+                    else:
+                        print ET.tostring(plantillaSalida, 'utf-8', method="xml")
+    if banderaEstado==True:
+        print str(contador)+' Creados'                            
     pass
 
 # Declaracion de directorio de entradas
 nombreDirectorioEntradas="./Entradas/Definiciones"
 nombreDirectorioPlantillas="./Plantillas"
+nombreDirectorioSalidas="Salidas"
 nombreCompilador="python"
 tipoPregunta="enunciadoIncompleto"
 listaXmlEntrada=list()
@@ -61,7 +73,7 @@ if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:
     listaXmlEntrada=xmlSalida.lecturaXmls(nombreDirectorioEntradas, tipoPregunta)
 
 for cadaXmlEntrada in listaXmlEntrada:
-    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cadaXmlEntrada.cantidadAlternativas)
+    retornaPlantilla(nombreDirectorioPlantillas, cadaXmlEntrada, cadaXmlEntrada.cantidadAlternativas,directorioSalida=nombreDirectorioSalidas+'/'+tipoPregunta)
 
 # # Almacenamiento usando el parser para este tipo de pregunta
 # if nombres.validaExistenciasSubProceso(nombreDirectorioEntradas)==True:

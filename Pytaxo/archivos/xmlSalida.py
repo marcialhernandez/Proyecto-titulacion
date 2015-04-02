@@ -3,7 +3,7 @@ try:
 except ImportError:
     import xml.etree.ElementTree as ET
 from clases import alternativa,xmlEntrada
-from archivos import nombres
+from archivos import nombres, acceso
 import hashlib, argparse
     
 def plantillaGenericaSalida():
@@ -181,9 +181,10 @@ def incrustaAlternativasXml(subRaizOpciones,listaAlternativas):
         hijo.text=alternativa.comentario
     #A partir del texto concatenado, se crea una unica ID que representa las alternativas
     #Esta ID se asigna a un nuevo atributo a la subRaiz 'opciones'
-    subRaizOpciones.set('id',hashlib.sha256(glosasAlternativas).hexdigest())
+    idItem=hashlib.sha256(glosasAlternativas).hexdigest()
+    subRaizOpciones.set('id',idItem)
     subRaizOpciones.set('idPreguntaGenerada',identificadorPregunta.rstrip())
-    pass
+    return idItem,identificadorPregunta.rstrip()
 
 #Funcion que analiza cada Xml de entrada
 #Si este es de un cierto tipo indicado por la entrada, se parsea con la funcion
@@ -197,3 +198,9 @@ def lecturaXmls(nombreDirectorioEntradas,tipo):
         if raizXml.attrib['tipo']==tipo: #'definicion':
             listaXmlFormateadas.append(preguntaParser(raizXml,nombres.obtieneNombreArchivo(xmlEntrada)))
     return listaXmlFormateadas
+
+def escribePlantilla(directorioSalida,tipoPregunta,nombreArchivo,raizXML,formato):
+    acceso.CrearDirectorio(directorioSalida+'/'+tipoPregunta)
+    tree = ET.ElementTree(raizXML)
+    tree.write(directorioSalida+'/'+nombreArchivo+'.'+formato)
+    pass

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from clases import item, entrada
-from clases import xmlEntrada
 from nombres import obtieneNombreArchivo
 import subprocess, stat, os
 
@@ -56,3 +55,14 @@ def obtenerResultadosEntrada(rutaArchivo, lenguaje):
     else:
         #print output
         return entrada.entrada(obtieneNombreArchivo(rutaArchivo),formateaResultado(output),"")
+
+def CrearDirectorio(rutaNuevoDirectorio):
+    try:
+        os.makedirs(rutaNuevoDirectorio)
+    except OSError:
+        if os.path.exists(rutaNuevoDirectorio):
+            pass
+        # We are nearly safe
+        else:
+        # There was an error on creation, so make sure we know about it
+            raise
