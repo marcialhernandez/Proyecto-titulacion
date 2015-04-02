@@ -89,9 +89,28 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
         alternativaSolucion.append(alternativa.alternativa(hashlib.sha256('solucion').hexdigest(),'solucion',str(puntaje),'-'.join(respuestas),comentario='Alternativa Correcta',numeracion=1))
         conjuntoAlternativas[alternativaSolucion[0].llave]=alternativaSolucion
     if tipo=='definicionPareada':
+        #Valores por default
+        composicionDistractores="1+2"
+        criterioOrdenDistractores="None"
+        ordenDistractoresCreciente="None"
+        ordenTerminos="alfabetico"
+        ordenTerminosCreciente="no"
+        #Se obtienen especificaciones para formar los distractores
+        for subRaiz in raizXmlEntrada.iter('pregunta'):
+            if bool(str(subRaiz.attrib['composicionDistractores']).rstrip())==True:
+                composicionDistractores=str(subRaiz.attrib['composicionDistractores'])
+            #Si existe el atributo en la entrada xml
+            if bool(str(subRaiz.attrib['criterioOrdenDistractores']).rstrip())==True:
+                criterioOrdenDistractores=str(subRaiz.attrib['criterioOrdenDistractores'])
+            if bool(str(subRaiz.attrib['ordenDistractoresCreciente']).rstrip())==True:
+                ordenDistractoresCreciente=str(subRaiz.attrib['ordenDistractoresCreciente'])
+            if bool(str(subRaiz.attrib['ordenTerminos']).rstrip())==True:
+                ordenTerminos=str(subRaiz.attrib['ordenTerminos'])
+            if bool(str(subRaiz.attrib['ordenTerminosCreciente']).rstrip())==True:
+                ordenTerminosCreciente=str(subRaiz.attrib['ordenTerminosCreciente'])
         conjuntoTerminosPareados=dict()
         conjuntoTerminosImpares=dict()
-        for subRaiz in raizXmlEntrada.iter('terminos'):
+        for subRaiz in raizXmlEntrada.iter('definiciones'):
             for glosa in subRaiz.iter('glosa'):
                 definicion=glosa.text
                 llaveTermino=glosa.attrib['id']
@@ -103,16 +122,19 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
                     textoComentario=""
                     for comentario in inpar.iter('comentario'):
                         textoComentario=textoComentario+' '+comentario.text
-                    textoComentario=textoComentario.lstrip()
+                    #textoComentario=textoComentario.lstrip()
                     #agrego solo si existe el inpar
                     if bool(inpar.text.rstrip())==True:
-                        pozoImpares.append(alternativa.alternativa(llaveTermino,'distractor','0',inpar.text.rstrip()))
+                        pozoImpares.append(alternativa.alternativa(llaveTermino,'distractor','0',inpar.text.rstrip(),comentario=textoComentario.rstrip()))
                 conjuntoTerminosPareados[definicion.rstrip()]=pozoPares
                 #No es necesario agregar una llave si no tiene impares
                 if len(pozoImpares)>0:
                     conjuntoTerminosImpares[definicion.rstrip()]=pozoImpares
             conjuntoAlternativas['terminos']=conjuntoTerminosPareados
             conjuntoAlternativas['distractores']=conjuntoTerminosImpares
+        #Se puede retornar antes el de definicion pareada, pues no presenta seccion opciones, sino una seccion completa de definiciones con sus pares e impares
+        #Ademas este tipo de pregunta tiene mas atributos
+        return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,cantidadAlternativas,termino=termino,enunciado=enunciado,composicionDistractores=composicionDistractores,criterioOrdenDistractores=criterioOrdenDistractores,ordenDistractoresCreciente=ordenDistractoresCreciente,ordenTerminos=ordenTerminos,ordenTerminosCreciente=ordenTerminosCreciente)
             #print conjuntoAlternativas['terminos'].keys()
     #En la pregunta tipo definicion pareada la arquitectura del conjunto de alternativas cambia
     #ahora es {'terminos':{'definicion':lista de alternativas (las diferentes definiciones)}}

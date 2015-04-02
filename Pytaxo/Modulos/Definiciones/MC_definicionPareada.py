@@ -1,43 +1,108 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #import sys
-import itertools
+import itertools, hashlib
 from archivos import nombres, xmlSalida
-from clases import plantilla
+from clases import plantilla,alternativa
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
 
-#No preserva el orden    
+#Convierte una lista de lista de alternativas en una lista de alternativas
+def comprimeAlternativas(MatrizAlternativas):
+    listaAlternativasComprimidas=list()
+    for cadaListaAlternativas in MatrizAlternativas:
+        listaAlternativasComprimidas.append(comprimeAlternativasSingle(cadaListaAlternativas))
+    return listaAlternativasComprimidas
+
+#Convierte lista de alternativas en una alternativa
+##(Debido a que cada alternativa es realidad un grupo de terminos que tambien son alternativas)
+def comprimeAlternativasSingle(listaAlternativas):
+    llave=''
+    tipo=''
+    puntaje=0
+    glosa=''
+    comentarios=''
+    for cadaAlternativa in listaAlternativas:
+        llave+=cadaAlternativa.llave
+        if cadaAlternativa.tipo not in tipo:
+            tipo+=cadaAlternativa.tipo+' '
+        puntaje+=int(cadaAlternativa.puntaje)
+        glosa+='"'+cadaAlternativa.glosa+'" ' #se debe agregar con rstrip()
+        if hasattr(cadaAlternativa,'comentario')==True:
+            comentarios+='"'+cadaAlternativa.comentario+'" '
+        else:
+            if cadaAlternativa.tipo=='solucion':
+                comentarios+='"Termino correcto"'+' '
+            else:
+                comentarios+='"Sin comentario"'+' '
+    if 'solucion' in tipo and 'distractor' in tipo:
+        tipo='distractor' 
+    return alternativa.alternativa(llave,tipo.rstrip(),puntaje,glosa.rstrip(),comentario=comentarios.rstrip())
+        
+#No preserva el orden y no admite datos tipo list() como por ejemplo matrices  
 def quitaDuplicados(seq):
     return {}.fromkeys(seq).keys()
     
-def retornaSignificadoCadena(cadenaSimbolos,xmlEntradaObject,distractores,solucion,cantidadAlternativas):
+def retornaSignificadoCadena(cadenaSimbolos,xmlEntradaObject,distractores,solucion,cantidadAlternativas,**kwuargs):
     listaCombinatoria=list()
     listaConjuntoAlternativas=list()
+    listaConjuntoDistractores=None
+    #Caso en que tenga varios comandos
     if '+' in cadenaSimbolos:
         for simbolos in quitaDuplicados(cadenaSimbolos.split('+')):
             for conjunto in retornaSignificadoSimbolo(simbolos, xmlEntradaObject, distractores, solucion):
                 if conjunto not in listaCombinatoria:
                     listaCombinatoria.append(conjunto)
         listaConjuntoDistractores=list(itertools.combinations(listaCombinatoria, cantidadAlternativas))
-        if len(listaConjuntoDistractores)>0:
+    else:
+        listaConjuntoDistractores=list(itertools.combinations(retornaSignificadoSimbolo(cadenaSimbolos, xmlEntradaObject, distractores, solucion), cantidadAlternativas))
+    if len(listaConjuntoDistractores)>0:
+        if 'orderBy' in kwuargs.keys():
+                if kwuargs['orderBy'].lower()=='largo':
+                    for conjunto in listaConjuntoDistractores:
+                    #A cada conjunto generado se le agrega su solucion
+                        conjunto=list(conjunto)
+                        conjunto.append(comprimeAlternativasSingle(solucion))
+                        if 'creciente' in kwuargs.keys():
+                            if kwuargs['creciente'].lower()=='si':
+                                conjunto.sort(key=lambda x:len(x.glosa))
+                            elif kwuargs['creciente'].lower()=='no':
+                                conjunto.sort(key=lambda x:len(x.glosa),reverse=True)
+                            else:
+                                conjunto.sort(key=lambda x:len(x.glosa))
+                        else:
+                            conjunto.sort(key=lambda x:len(x.glosa))
+                        listaConjuntoAlternativas.append(conjunto)
+                elif kwuargs['orderBy'].lower()=='alfabetico':
+                    for conjunto in listaConjuntoDistractores:
+                    #A cada conjunto generado se le agrega su solucion
+                        conjunto=list(conjunto)
+                        conjunto.append(comprimeAlternativasSingle(solucion))
+                        if 'creciente' in kwuargs.keys():
+                            if kwuargs['creciente'].lower()=='si':
+                                conjunto.sort(key=lambda x:x.glosa.lower)
+                            elif kwuargs['creciente'].lower()=='no':
+                                conjunto.sort(key=lambda x:x.glosa.lower,reverse=True)
+                            else:
+                                conjunto.sort(key=lambda x:x.glosa.lower)
+                        else:
+                            conjunto.sort(key=lambda x:x.glosa.lower)
+                        listaConjuntoAlternativas.append(conjunto)
+                else:
+                    for conjunto in listaConjuntoDistractores:
+                    #A cada conjunto generado se le agrega su solucion
+                        conjunto=list(conjunto)
+                        conjunto.append(comprimeAlternativasSingle(solucion))
+                        listaConjuntoAlternativas.append(conjunto)                     
+        else:
             for conjunto in listaConjuntoDistractores:
             #A cada conjunto generado se le agrega su solucion
                 conjunto=list(conjunto)
-                conjunto.append(list(solucion))
+                conjunto.append(comprimeAlternativasSingle(solucion))
                 listaConjuntoAlternativas.append(conjunto)
-        return listaConjuntoAlternativas
-    else:
-        listaConjuntoDistractores=list(itertools.combinations(retornaSignificadoSimbolo(cadenaSimbolos, xmlEntradaObject, distractores, solucion), cantidadAlternativas))
-        if len(listaConjuntoDistractores)>0:
-            for conjunto in listaConjuntoDistractores:
-                #A cada conjunto generado se le agrega su solucion
-                conjunto=list(conjunto)
-                conjunto.append(list(solucion))
-                listaConjuntoAlternativas.append(conjunto)
-        return listaConjuntoAlternativas
+    return listaConjuntoAlternativas
 
 def retornaSignificadoSimbolo(simbolo,xmlEntradaObject,distractores,solucion):
     simbolo=simbolo.lstrip().rstrip().lower()
@@ -93,7 +158,8 @@ def pozoDistractoresNesimo(xmlEntradaObject,distractores,cantidadReemplazoDistra
         cantidadReemplazoDistractores=cantidadReemplazoDistractores-1
         #Se termina recursion 
         if cantidadReemplazoDistractores==0:
-            return pozoDistractoresN
+            return comprimeAlternativas(pozoDistractoresN)
+                
         else:
             return pozoDistractoresNesimo(xmlEntradaObject,distractores,cantidadReemplazoDistractores,nuevoPozo=pozoDistractoresN)
     #Implica que es el nesimo ciclo
@@ -112,7 +178,7 @@ def pozoDistractoresNesimo(xmlEntradaObject,distractores,cantidadReemplazoDistra
                     contador+=1
         cantidadReemplazoDistractores=cantidadReemplazoDistractores-1
         if cantidadReemplazoDistractores==0:
-            return pozoDistractoresD
+            return comprimeAlternativas(pozoDistractoresD)
         else:
             return pozoDistractoresNesimo(xmlEntradaObject,distractores,cantidadReemplazoDistractores,nuevoPozo=pozoDistractoresD)
 
@@ -164,25 +230,36 @@ def pozoDistractoresDouble(xmlEntradaObject,solucion,distractores):
 #0 ->retorna una lista vacia
 #0+1 -> genera alternativas derivadas de distractores que tienen si o si 1 reemplazo  
 #En caso que no se especifique, genera alternativas correspondientes a la entrada 1+2
-#Admite entrada kwuargs[] 'cantidadItems' para limitar cantidad de items generados
+#Admite entrada kwuargs[] 'orderBy' para ordenar los conjuntos por medio de un criterio
+#Admite entrada kwuargs[] 'creciente', si es True los ordena de menor a mayor, False de menor a mayor
+#Los criterios disponibles son largo y alfabetico, por default sin orden y la solucion sera la ultima alternativa
 
 def agrupamientoPareado(xmlEntradaObject,solucion,distractores,cantidadAlternativas,**kwuargs):
     if 'especificacion' in kwuargs.keys():
-        return retornaSignificadoCadena(kwuargs['especificacion'],xmlEntradaObject,distractores,solucion,cantidadAlternativas)    
+        if 'orderBy' in kwuargs.keys():
+            if 'creciente' in kwuargs.keys():
+                return retornaSignificadoCadena(kwuargs['especificacion'],xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'],creciente=kwuargs['creciente'])
+            else:
+                return retornaSignificadoCadena(kwuargs['especificacion'],xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'])
+        else:
+            return retornaSignificadoCadena(kwuargs['especificacion'],xmlEntradaObject,distractores,solucion,cantidadAlternativas-1)    
     #default ->1+2
     else:
-        return retornaSignificadoCadena('1+2',xmlEntradaObject,distractores,solucion,cantidadAlternativas-1)
+        if 'orderBy' in kwuargs.keys():
+            if 'creciente' in kwuargs.keys():
+                return retornaSignificadoCadena('1+2',xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'],creciente=kwuargs['creciente'])
+            else:
+                return retornaSignificadoCadena('1+2',xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'])
+        else:
+            return retornaSignificadoCadena('1+2',xmlEntradaObject,distractores,solucion,cantidadAlternativas-1)
+        
     #Valida el correcto funcionamiento, reemplazando el return por listaAlternativas
 #     print type(listaAlternativas)
 #     print len(listaAlternativas)
 #     for conjunto in listaAlternativas:
 #         print 'conjunto'
-#         z=0
 #         for elem in conjunto:
-#             print str(z)+')'
-#             z=+1
-#             for elem2 in elem:
-#                 print elem2.imprimeAlternativa()            
+#             print elem.tipo           
 
 #Funcion que analiza la plantilla que corresponde a este tipo de pregunta
 #A esa plantilla se le añaden los datos obtenidos desde la entrada de
@@ -215,53 +292,90 @@ def recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
 
 def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlternativas, tipoPregunta): #,xmlEntradaObject):
     #tipoPregunta=nombres.nombreScript(__file__)
+    contador=0
     for plantilla in recogePlantillas(nombreDirectorioPlantillas,tipoPregunta):
         plantillaSalida=xmlSalida.plantillaGenericaSalida()
         for subRaizSalida in plantillaSalida.iter():
                 if subRaizSalida.tag=='plantilla':
                     subRaizSalida.set('tipo',xmlEntradaObject.tipo)
                     subRaizSalida.set('id',xmlEntradaObject.id)
-#                 if subRaizSalida.tag=='enunciado':
-#                     if '@termino' in subRaizSalida.text:
-#                         subRaizSalida.text=plantilla.enunciado.replace('@termino',xmlEntradaObject.termino)
+                if subRaizSalida.tag=='enunciado':
+                    subRaizSalida.text=plantilla.enunciado
                 if subRaizSalida.tag=='opciones':
+                    contador=0
                     for conjuntoDefiniciones in xmlEntradaObject.barajaDefiniciones():
+                        for elem in subRaizSalida.getchildren():
+                            subRaizSalida.remove(elem)
+                        seccionDefiniciones=ET.SubElement(subRaizSalida,'definiciones')
+                        idPreguntaGenerada=""
+                        for definicion in conjuntoDefiniciones:
+                            subRaizDefinicion=ET.SubElement(seccionDefiniciones,'definicion')
+                            subRaizDefinicion.text=definicion
+                            idPreguntaGenerada+=definicion+' '
+                        for x in plantillaSalida.iter('plantilla'): x.set('id',hashlib.sha256(idPreguntaGenerada.rstrip()).hexdigest())               
+                        #Seccion donde estaran los terminos
+                        seccionTerminos=ET.SubElement(subRaizSalida,'terminos')
+                        #Seccion donde estaran las alternativas
+                        seccionAlternativas=ET.SubElement(subRaizSalida,'conjuntoAlternativas')
                         #Aqui se presenta cada posible pregunta
                         solucionesYDistractores=posiblesSolucionesYDistractoresConjunto(xmlEntradaObject,conjuntoDefiniciones)
                         #Para cada solucion de la variante actual 
                         for solucion in solucionesYDistractores['soluciones']:
-                            
-                            #Estos conjunto de alternativas ya tienen su respectiva solucion integrada
-                            #Conjuntos de conjuntos de terminos ->tipo lista de lista
-                            for cadaConjuntoAlternativas in agrupamientoPareado(xmlEntradaObject,solucion,solucionesYDistractores['distractores'],cantidadAlternativas):
+                            listaTerminos=list(solucion)+solucionesYDistractores['distractores']
+                            #Aqui se presenta el ordenamiento en que aparecen los terminos en el enunciado
+                            #Por default sera alfabetico creciente
+                            if xmlEntradaObject.ordenTerminos=='alfabetico':
+                                if xmlEntradaObject.ordenTerminosCreciente=='si':
+                                    listaTerminos.sort(key=lambda x:x.glosa.lower)
+                                elif xmlEntradaObject.ordenTerminosCreciente=='no':
+                                    listaTerminos.sort(key=lambda x:x.glosa.lower, reverse=True)
+                                else:
+                                    listaTerminos.sort(key=lambda x:x.glosa.lower)
+                            elif xmlEntradaObject.ordenTerminos=='largo':
+                                if xmlEntradaObject.ordenTerminosCreciente=='si':
+                                    listaTerminos.sort(key=lambda x:len(x.glosa))
+                                elif xmlEntradaObject.ordenTerminosCreciente=='no':
+                                    listaTerminos.sort(key=lambda x:len(x.glosa), reverse=True)
+                                else:
+                                    listaTerminos.sort(key=lambda x:len(x.glosa))
+                            else:
+                                listaTerminos.sort(key=lambda x:x.glosa.lower)
+                            #Por cada ciclo debo eliminar los hijos de la seccion terminos y poner los nuevos
+                            for elem in seccionTerminos.getchildren():
+                                seccionTerminos.remove(elem)
+                            #Agrego los posibles terminos
+                            for cadaTermino in listaTerminos:
+                                subRaizTermino=ET.SubElement(seccionTerminos,'posiblePar')
+                                subRaizTermino.text=cadaTermino.glosa
+                                subRaizTermino.set('id',cadaTermino.llave)
                                 
-                                #Conjunto de terminos -> tipo lista
-                                for cadaAlternativa in cadaConjuntoAlternativas:
-                                    #Se requiere convertir las listas de terminos en 1 alternativa!!
-                                    idAlternativa=''
-                                    comentariosAlternativa=''
-                                    glosaAlternativa=''
-                                    puntajeAlternativa=0
-                                    #Terminos ->tipo alternativa
-                                    for cadaTermino in cadaAlternativa:
-                                        pass
-                                
-                                #     for conjunto in listaAlternativas:
-#         print 'conjunto'
-#         z=0
-#         for elem in conjunto:
-#             print str(z)+')'
-#             z=+1
-#             for elem2 in elem:
-#                 print elem2.imprimeAlternativa()  
-#                     for conjuntoAlternativas in xmlEntradaObject.agrupamientoAlternativas2(cantidadAlternativas):
-#                         xmlSalida.incrustaAlternativasXml(subRaizSalida, conjuntoAlternativas)
-#                         print ET.tostring(plantillaSalida, 'utf-8', method="xml")
+                            for cadaConjunto in agrupamientoPareado(xmlEntradaObject,solucion,solucionesYDistractores['distractores'],cantidadAlternativas,especificacion=xmlEntradaObject.composicionDistractores, orderBy=xmlEntradaObject.criterioOrdenDistractores, creciente=xmlEntradaObject.ordenDistractoresCreciente):
+                                for elem in seccionAlternativas.getchildren():
+                                    seccionAlternativas.remove(elem)
+                                glosasAlternativas=""
+                                idPreguntaGenerada=""
+                                for cadaTermino in cadaConjunto:
+                                    subRaizAlternativa=ET.SubElement(seccionAlternativas,'alternativa')
+                                    subRaizAlternativa.text=cadaTermino.glosa
+                                    glosasAlternativas+=cadaTermino.glosa
+                                    subRaizAlternativa.set('puntaje',str(cadaTermino.puntaje))
+                                    subRaizAlternativa.set('id',cadaTermino.llave)
+                                    subRaizAlternativa.set('tipo',cadaTermino.tipo)
+                                    subRaizComentario=ET.SubElement(subRaizAlternativa,'comentario')
+                                    subRaizComentario.text=cadaTermino.comentario
+                                    idPreguntaGenerada+=cadaTermino.identificador()
+                                    subRaizSalida.set('idPreguntaGenerada',idPreguntaGenerada.rstrip())
+                                print ET.tostring(plantillaSalida, 'utf-8', method="xml")
+                                contador+=1
+                                if contador==40:
+                                    return 0
+#     print contador                            
     pass
 
 # Declaracion de directorio de entradas
 nombreDirectorioEntradas="./Entradas/Definiciones"
 nombreDirectorioPlantillas="./Plantillas"
+nombreDirectorioSalidas="./Salidas"
 nombreCompilador="python"
 tipoPregunta='definicionPareada'
 listaXmlEntrada=list()
