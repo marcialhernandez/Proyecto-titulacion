@@ -38,8 +38,10 @@ def comprimeAlternativasSingle(listaAlternativas):
             else:
                 comentarios+='"Sin comentario"'+' '
     if 'solucion' in tipo and 'distractor' in tipo:
-        tipo='distractor' 
-    return alternativa.alternativa(llave,tipo.rstrip(),puntaje,glosa.rstrip(),comentario=comentarios.rstrip())
+        tipo='distractor'
+    #puntaje=float(puntaje)/cantidadAlternativas
+    #print puntaje
+    return alternativa.alternativa(llave,tipo.rstrip(),float(puntaje)/len(listaAlternativas),glosa.rstrip(),comentario=comentarios.rstrip())
         
 #No preserva el orden y no admite datos tipo list() como por ejemplo matrices  
 def quitaDuplicados(seq):

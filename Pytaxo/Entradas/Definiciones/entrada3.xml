@@ -13,8 +13,8 @@
 <glosa id="2">Lenguaje de bajo nivel
 <par>C</par>
 <par>C++</par>
-<par>Fortran</par>
-<par>Cobol</par>
+<inpar>Cobol
+<comentario>Lenguaje de alto nivel</comentario></inpar>
 <inpar>python
 <comentario>Lenguaje de alto nivel</comentario></inpar>
 </glosa>
