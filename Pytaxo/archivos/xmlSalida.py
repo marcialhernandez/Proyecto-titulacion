@@ -71,6 +71,7 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
         puntaje=int((subRaiz.attrib['puntaje']))
         tipo=str(subRaiz.attrib['tipo'])
         cantidadAlternativas=int(subRaiz.attrib['cantidadAlternativas'])
+        idOrigenEntrada=str(subRaiz.attrib['idOrigenEntrada'])
     if tipo=='definicion':
         for subRaiz in raizXmlEntrada.iter('termino'):
             termino=subRaiz.text
@@ -92,22 +93,19 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
         #Valores por default
         composicionDistractores="1+2"
         criterioOrdenDistractores="None"
-        ordenDistractoresCreciente="None"
-        ordenTerminos="alfabetico"
-        ordenTerminosCreciente="no"
+        ordenTerminos="None"
+        cantidadCombinacionesDefiniciones=1
         #Se obtienen especificaciones para formar los distractores
         for subRaiz in raizXmlEntrada.iter('pregunta'):
             if bool(str(subRaiz.attrib['composicionDistractores']).rstrip())==True:
                 composicionDistractores=str(subRaiz.attrib['composicionDistractores'])
             #Si existe el atributo en la entrada xml
-            if bool(str(subRaiz.attrib['criterioOrdenDistractores']).rstrip())==True:
-                criterioOrdenDistractores=str(subRaiz.attrib['criterioOrdenDistractores'])
-            if bool(str(subRaiz.attrib['ordenDistractoresCreciente']).rstrip())==True:
-                ordenDistractoresCreciente=str(subRaiz.attrib['ordenDistractoresCreciente'])
+            if bool(str(subRaiz.attrib['ordenDistractores']).rstrip())==True:
+                criterioOrdenDistractores=str(subRaiz.attrib['ordenDistractores'])
             if bool(str(subRaiz.attrib['ordenTerminos']).rstrip())==True:
                 ordenTerminos=str(subRaiz.attrib['ordenTerminos'])
-            if bool(str(subRaiz.attrib['ordenTerminosCreciente']).rstrip())==True:
-                ordenTerminosCreciente=str(subRaiz.attrib['ordenTerminosCreciente'])
+            if bool(str(subRaiz.attrib['cantidadCombinacionesDefiniciones']).rstrip())==True:
+                cantidadCombinacionesDefiniciones=int(subRaiz.attrib['cantidadCombinacionesDefiniciones'])
         conjuntoTerminosPareados=dict()
         conjuntoTerminosImpares=dict()
         for subRaiz in raizXmlEntrada.iter('definiciones'):
@@ -134,7 +132,7 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
             conjuntoAlternativas['distractores']=conjuntoTerminosImpares
         #Se puede retornar antes el de definicion pareada, pues no presenta seccion opciones, sino una seccion completa de definiciones con sus pares e impares
         #Ademas este tipo de pregunta tiene mas atributos
-        return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,cantidadAlternativas,termino=termino,enunciado=enunciado,composicionDistractores=composicionDistractores,criterioOrdenDistractores=criterioOrdenDistractores,ordenDistractoresCreciente=ordenDistractoresCreciente,ordenTerminos=ordenTerminos,ordenTerminosCreciente=ordenTerminosCreciente)
+        return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,cantidadAlternativas,termino=termino,enunciado=enunciado,composicionDistractores=composicionDistractores,criterioOrdenDistractores=criterioOrdenDistractores,ordenTerminos=ordenTerminos,cantidadCombinacionesDefiniciones=cantidadCombinacionesDefiniciones, idOrigenEntrada=idOrigenEntrada)
             #print conjuntoAlternativas['terminos'].keys()
     #En la pregunta tipo definicion pareada la arquitectura del conjunto de alternativas cambia
     #ahora es {'terminos':{'definicion':lista de alternativas (las diferentes definiciones)}}
@@ -151,7 +149,7 @@ def preguntaParser(raizXmlEntrada,nombreArchivo):
                 else:
                     conjuntoAlternativas[opcion.attrib['id']]=list()
                     conjuntoAlternativas[opcion.attrib['id']].append(alternativa.alternativa(opcion.attrib['id'],opcion.attrib['tipo'],opcion.attrib['puntaje'],glosaOpcion.text.rstrip(),comentario=comentarioAlternativa,numeracion=1))
-    return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,cantidadAlternativas,termino=termino,enunciado=enunciado)
+    return xmlEntrada.xmlEntrada(nombreArchivo,tipo,puntaje,conjuntoAlternativas,cantidadAlternativas,termino=termino,enunciado=enunciado, idOrigenEntrada=idOrigenEntrada)
 
 #Funcion que analiza argumentos ingresados por comando al ejecutar la funcion
 #Retorna la cantidad de alternativas ingresada por el usuario, en caso que no

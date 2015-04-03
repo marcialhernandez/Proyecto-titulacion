@@ -24,6 +24,7 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
             if subRaizSalida.tag=='plantilla':
                 subRaizSalida.set('tipo',xmlEntradaObject.tipo)
                 subRaizSalida.set('id',xmlEntradaObject.id)
+                subRaizSalida.set('idOrigenEntrada',xmlEntradaObject.idOrigenEntrada)
             if subRaizSalida.tag=='enunciado':
                 subRaizSalida.text=xmlEntradaObject.enunciado
             if subRaizSalida.tag=='opciones':

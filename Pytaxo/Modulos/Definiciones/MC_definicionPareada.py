@@ -61,48 +61,25 @@ def retornaSignificadoCadena(cadenaSimbolos,xmlEntradaObject,distractores,soluci
     else:
         listaConjuntoDistractores=list(itertools.combinations(retornaSignificadoSimbolo(cadenaSimbolos, xmlEntradaObject, distractores, solucion), cantidadAlternativas))
     if len(listaConjuntoDistractores)>0:
-        if 'orderBy' in kwuargs.keys():
-                if kwuargs['orderBy'].lower()=='largo':
-                    for conjunto in listaConjuntoDistractores:
-                    #A cada conjunto generado se le agrega su solucion
-                        conjunto=list(conjunto)
-                        conjunto.append(comprimeAlternativasSingle(solucion))
-                        if 'creciente' in kwuargs.keys():
-                            if kwuargs['creciente'].lower()=='si':
-                                conjunto.sort(key=lambda x:len(x.glosa))
-                            elif kwuargs['creciente'].lower()=='no':
-                                conjunto.sort(key=lambda x:len(x.glosa),reverse=True)
-                            else:
-                                conjunto.sort(key=lambda x:len(x.glosa))
-                        else:
-                            conjunto.sort(key=lambda x:len(x.glosa))
-                        listaConjuntoAlternativas.append(conjunto)
-                elif kwuargs['orderBy'].lower()=='alfabetico':
-                    for conjunto in listaConjuntoDistractores:
-                    #A cada conjunto generado se le agrega su solucion
-                        conjunto=list(conjunto)
-                        conjunto.append(comprimeAlternativasSingle(solucion))
-                        if 'creciente' in kwuargs.keys():
-                            if kwuargs['creciente'].lower()=='si':
-                                conjunto.sort(key=lambda x:x.glosa.lower)
-                            elif kwuargs['creciente'].lower()=='no':
-                                conjunto.sort(key=lambda x:x.glosa.lower,reverse=True)
-                            else:
-                                conjunto.sort(key=lambda x:x.glosa.lower)
-                        else:
-                            conjunto.sort(key=lambda x:x.glosa.lower)
-                        listaConjuntoAlternativas.append(conjunto)
+        for conjunto in listaConjuntoDistractores:
+            conjunto=list(conjunto)
+            conjunto.append(comprimeAlternativasSingle(solucion))
+            if 'orderBy' in kwuargs.keys():
+                if kwuargs['orderBy'].lower()=='largocreciente':
+                    conjunto.sort(key=lambda x:len(x.glosa))
+                elif kwuargs['orderBy'].lower()=='largodecreciente':
+                    conjunto.sort(key=lambda x:len(x.glosa),reverse=True)
+                elif kwuargs['orderBy'].lower()=='alfabeticocreciente':
+                    conjunto.sort(key=lambda x:x.glosa.lower)
+                elif kwuargs['orderBy'].lower()=='alfabeticodecreciente':
+                    conjunto.sort(key=lambda x:x.glosa.lower,reverse=True)
                 else:
-                    for conjunto in listaConjuntoDistractores:
-                    #A cada conjunto generado se le agrega su solucion
-                        conjunto=list(conjunto)
-                        conjunto.append(comprimeAlternativasSingle(solucion))
-                        listaConjuntoAlternativas.append(conjunto)                     
-        else:
-            for conjunto in listaConjuntoDistractores:
-            #A cada conjunto generado se le agrega su solucion
-                conjunto=list(conjunto)
-                conjunto.append(comprimeAlternativasSingle(solucion))
+                    #No se ordena quedando la alternativa solucion siempre al final
+                    pass
+                #Luego se agrega el conjunto al conjunto de alternativas Validas
+                listaConjuntoAlternativas.append(conjunto)
+            #Si no se presenta el comando, no se ordena quedando la alternativa solucion siempre al final
+            else:
                 listaConjuntoAlternativas.append(conjunto)
     return listaConjuntoAlternativas
 
@@ -239,19 +216,13 @@ def pozoDistractoresDouble(xmlEntradaObject,solucion,distractores):
 def agrupamientoPareado(xmlEntradaObject,solucion,distractores,cantidadAlternativas,**kwuargs):
     if 'especificacion' in kwuargs.keys():
         if 'orderBy' in kwuargs.keys():
-            if 'creciente' in kwuargs.keys():
-                return retornaSignificadoCadena(kwuargs['especificacion'],xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'],creciente=kwuargs['creciente'])
-            else:
-                return retornaSignificadoCadena(kwuargs['especificacion'],xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'])
+            return retornaSignificadoCadena(kwuargs['especificacion'],xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'])
         else:
             return retornaSignificadoCadena(kwuargs['especificacion'],xmlEntradaObject,distractores,solucion,cantidadAlternativas-1)    
     #default ->1+2
     else:
         if 'orderBy' in kwuargs.keys():
-            if 'creciente' in kwuargs.keys():
-                return retornaSignificadoCadena('1+2',xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'],creciente=kwuargs['creciente'])
-            else:
-                return retornaSignificadoCadena('1+2',xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'])
+            return retornaSignificadoCadena('1+2',xmlEntradaObject,distractores,solucion,cantidadAlternativas-1,orderBy=kwuargs['orderBy'])
         else:
             return retornaSignificadoCadena('1+2',xmlEntradaObject,distractores,solucion,cantidadAlternativas-1)
         
@@ -304,11 +275,16 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                 if subRaizSalida.tag=='plantilla':
                     subRaizSalida.set('tipo',xmlEntradaObject.tipo)
                     subRaizSalida.set('id',xmlEntradaObject.id)
+                    subRaizSalida.set('idOrigenEntrada',xmlEntradaObject.idOrigenEntrada)
                 if subRaizSalida.tag=='enunciado':
                     subRaizSalida.text=plantilla.enunciado
                 if subRaizSalida.tag=='opciones':
                     contador=0
+                    cantidadCombinacionesDefiniciones=0
                     for conjuntoDefiniciones in xmlEntradaObject.barajaDefiniciones():
+                        if xmlEntradaObject.cantidadCombinacionesDefiniciones==cantidadCombinacionesDefiniciones:
+                            break
+                        cantidadCombinacionesDefiniciones+=1
                         for elem in subRaizSalida.getchildren():
                             subRaizSalida.remove(elem)
                         seccionDefiniciones=ET.SubElement(subRaizSalida,'definiciones')
@@ -330,22 +306,17 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                             listaTerminos=list(solucion)+solucionesYDistractores['distractores']
                             #Aqui se presenta el ordenamiento en que aparecen los terminos en el enunciado
                             #Por default sera alfabetico creciente
-                            if xmlEntradaObject.ordenTerminos=='alfabetico':
-                                if xmlEntradaObject.ordenTerminosCreciente=='si':
-                                    listaTerminos.sort(key=lambda x:x.glosa.lower)
-                                elif xmlEntradaObject.ordenTerminosCreciente=='no':
-                                    listaTerminos.sort(key=lambda x:x.glosa.lower, reverse=True)
-                                else:
-                                    listaTerminos.sort(key=lambda x:x.glosa.lower)
-                            elif xmlEntradaObject.ordenTerminos=='largo':
-                                if xmlEntradaObject.ordenTerminosCreciente=='si':
-                                    listaTerminos.sort(key=lambda x:len(x.glosa))
-                                elif xmlEntradaObject.ordenTerminosCreciente=='no':
-                                    listaTerminos.sort(key=lambda x:len(x.glosa), reverse=True)
-                                else:
-                                    listaTerminos.sort(key=lambda x:len(x.glosa))
+                            if xmlEntradaObject.ordenTerminos.lower()=='alfabeticocreciente':
+                                listaTerminos.sort(key=lambda x:x.glosa.lower())
+                            elif xmlEntradaObject.ordenTerminos.lower()=='alfabeticodecreciente':
+                                listaTerminos.sort(key=lambda x:x.glosa.lower, reverse=True)
+                            elif xmlEntradaObject.ordenTerminos.lower()=='largocreciente':
+                                listaTerminos.sort(key=lambda x:len(x.glosa))
+                            elif xmlEntradaObject.ordenTerminos.lower()=='largodecreciente':
+                                listaTerminos.sort(key=lambda x:len(x.glosa), reverse=True)
                             else:
-                                listaTerminos.sort(key=lambda x:x.glosa.lower)
+                                #No se ordena
+                                pass 
                             #Por cada ciclo debo eliminar los hijos de la seccion terminos y poner los nuevos
                             for elem in seccionTerminos.getchildren():
                                 seccionTerminos.remove(elem)
@@ -356,7 +327,7 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                                 subRaizTermino.set('id',cadaTermino.llave)
                             #solucion provisional
                             ordenamientoDiferente=0 #indica que es el mismo grupo de alternativas pero estan ordenados de forma diferente
-                            for cadaConjunto in agrupamientoPareado(xmlEntradaObject,solucion,solucionesYDistractores['distractores'],cantidadAlternativas,especificacion=xmlEntradaObject.composicionDistractores, orderBy=xmlEntradaObject.criterioOrdenDistractores, creciente=xmlEntradaObject.ordenDistractoresCreciente):
+                            for cadaConjunto in agrupamientoPareado(xmlEntradaObject,solucion,solucionesYDistractores['distractores'],cantidadAlternativas,especificacion=xmlEntradaObject.composicionDistractores, orderBy=xmlEntradaObject.criterioOrdenDistractores):
                                 for elem in seccionAlternativas.getchildren():
                                     seccionAlternativas.remove(elem)
                                 glosasAlternativas=""
@@ -374,6 +345,9 @@ def retornaPlantilla(nombreDirectorioPlantillas,xmlEntradaObject,cantidadAlterna
                                     subRaizSalida.set('idAlternativasGenerada',idAlternativas.rstrip())
                                 ordenamientoDiferente+=1
                                 contador+=1
+#                                 if contador==4:
+#                                     print str(contador)+' Creados'  
+#                                     return 0      
                                 if banderaEstado==True:
                                     #Se instancia la plantilla como un elemento de element tree
                                     xmlSalida.escribePlantilla(kwuargs['directorioSalida'],xmlEntradaObject.tipo, idPreguntaGenerada+' '+idAlternativas.rstrip()+' '+str(ordenamientoDiferente)+' '+str(contador), plantillaSalida,'xml')

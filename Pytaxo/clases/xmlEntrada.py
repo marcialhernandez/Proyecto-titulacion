@@ -14,6 +14,10 @@ class xmlEntrada:
         self.alternativas=alternativas
         self.cantidadAlternativas=cantidadAlternativas
         self.id="NULL"
+        if 'idOrigenEntrada' in kwargs.keys():
+            self.idOrigenEntrada=kwargs['idOrigenEntrada']
+        else:
+            self.idOrigenEntrada="NULL"
         #Atributos solo de preguntas tipo Definicion
         if self.tipo=="definicion":
             self.termino=kwargs['termino']
@@ -32,11 +36,10 @@ class xmlEntrada:
             #La id de este tipo de pregunta se genera cuando tambien lo hace el item
             #Debido a que el ordenamiento de las definiciones expuestas en la parte izquierda
             #Cambian de orden
-            self.ordenDistractoresCreciente=kwargs['ordenDistractoresCreciente']
             self.criterioOrdenDistractores=kwargs['criterioOrdenDistractores']
             self.composicionDistractores=kwargs['composicionDistractores']
-            self.ordenTerminosCreciente=kwargs['ordenTerminosCreciente']
             self.ordenTerminos=kwargs['ordenTerminos']
+            self.cantidadCombinacionesDefiniciones=kwargs['cantidadCombinacionesDefiniciones']
     
     def printContenidoEntrada(self):
         mensaje="Nombre entrada: {nombre} \nPuntaje: {puntaje}\nTermino: {termino}\nDefinicion: {definicion}\nDistractores: {alternativas} "
